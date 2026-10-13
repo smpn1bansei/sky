@@ -38,6 +38,7 @@ class Rintangan {
 
   reset() {
     this.aktif = false;
+    this.diperingatkan = false;
     this.t = 0;
     if (this.gerak === 'lawan') this.s = this.awal.s + this.kecepatan * 7; // bertemu pemain kira-kira di awal.s
     else if (this.gerak === 'jatuh') { this.s = this.awal.s + 45; this.y = 55; }
@@ -244,11 +245,11 @@ const JENIS_PER_TEMA = {
  * Membuat rintangan untuk satu blok rute (antara gerbang sebelumnya dan gerbang berikutnya).
  * Rintangan hanya diletakkan di bagian lurus, jauh dari belokan dan gerbang.
  */
-export function buatRintanganBlok(scene, rute, blok, tema, kesulitan, rng = Math.random) {
+export function buatRintanganBlok(scene, rute, blok, tema, kesulitan, rng = Math.random, zonaLarangan = []) {
   const jumlah = (KESULITAN[kesulitan] || KESULITAN.sedang).rintangan;
   const kandidat = [];
   for (let s = blok.sAwal + (blok.k === 0 ? 160 : 80); s < blok.sGerbang - 110; s += 5) {
-    if (rute.diLurus(s, 45)) kandidat.push(s);
+    if (rute.diLurus(s, 45) && !zonaLarangan.some(([a, b]) => s > a && s < b)) kandidat.push(s);
   }
   for (let i = kandidat.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));

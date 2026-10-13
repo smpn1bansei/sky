@@ -38,10 +38,12 @@ export function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-/** Kunci unik nama+kelas, aman dipakai sebagai key Firebase. */
-export function kunciNama(nama, kelas) {
-  const bersih = (s) => String(s).toLowerCase().trim().replace(/\s+/g, ' ').replace(/[.#$\[\]\/]/g, '').replace(/ /g, '_');
-  return `${bersih(nama)}__${bersih(kelas)}`.slice(0, 80);
+/**
+ * ID siswa dari NAMA LENGKAP (kunci utama peserta di satu room).
+ * Huruf besar/kecil & spasi berlebih diabaikan; karakter terlarang Firebase dibuang.
+ */
+export function kunciNama(nama) {
+  return String(nama).toLowerCase().trim().replace(/\s+/g, ' ').replace(/[.#$\[\]\/]/g, '').replace(/ /g, '_').slice(0, 80);
 }
 
 export function simpanLokal(kunci, nilai) {

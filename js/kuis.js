@@ -7,6 +7,8 @@ import { pengaturanGame } from '../config.js';
 import { acakBerseed, hashString, kocok, bacaLokal, simpanLokal, hapusLokal, HURUF } from './util.js';
 
 const MIN_SISA_SETELAH_REFRESH = 5; // detik
+export const POIN_CINCIN = 10;      // × panjang rantai cincin (maks ×5)
+export const POIN_FOKUS = 50;       // bonus tantangan pintu (Stroop)
 
 class Sesi {
   constructor() {
@@ -17,12 +19,16 @@ class Sesi {
     this.skor = 0;
     this.poinTerakhir = 0;
     this.waktuPerSoal = 30;
+    this.combo = 0;         // jawaban benar berturut-turut
+    this.stat = { tabrakan: 0, cincin: 0, fokus: 0, comboTerbaik: 0 };
   }
 
   get total() { return this.daftar.length; }
   get selesaiSemua() { return this.indeks >= this.total; }
   get nilai() { return this.total ? Math.round((this.benar / this.total) * 100) : 0; }
   get soalSekarang() { return this.daftar[this.indeks]; }
+  /** Pengali combo: ×1, ×1,25, ×1,5 … maksimal ×2 */
+  get pengaliCombo() { return Math.min(2, 1 + 0.25 * Math.max(0, this.combo - 1)); }
 
   /** Menyusun soal untuk ditampilkan, opsi diacak dengan seed tetap (aman saat refresh). */
   susunSoal(id, s, acakOpsi, seed) {
@@ -44,11 +50,41 @@ class Sesi {
     return Math.max(MIN_SISA_SETELAH_REFRESH, Math.min(this.waktuPerSoal, sisa));
   }
 
-  hitungPoin(benar, sisaDetik) {
-    if (!benar) return 0;
-    const dasar = pengaturanGame.poinBenar || 100;
-    return dasar + Math.round(dasar * 0.5 * Math.max(0, sisaDetik) / this.waktuPerSoal);
+  /** Mencatat hasil jawaban & menghitung poin (dasar + bonus kecepatan) × combo. */
+  catatJawaban(benar, sisaDetik) {
+    if (benar) {
+      this.benar++;
+      this.combo++;
+      this.stat.comboTerbaik = Math.max(this.stat.comboTerbaik, this.combo);
+      const dasar = pengaturanGame.poinBenar || 100;
+      const poin = dasar + Math.round(dasar * 0.5 * Math.max(0, sisaDetik) / this.waktuPerSoal);
+      this.poinTerakhir = Math.round(poin * this.pengaliCombo);
+    } else {
+      this.salah++;
+      this.combo = 0;
+      this.poinTerakhir = 0;
+    }
+    this.skor += this.poinTerakhir;
+    this.indeks++;
   }
+
+  /** Cincin bintang: poin = 10 × panjang rantai (maks ×5). */
+  catatCincin(rantai) {
+    const poin = POIN_CINCIN * Math.min(5, rantai);
+    this.stat.cincin++;
+    this.skor += poin;
+    return poin;
+  }
+
+  /** Tantangan fokus di pintu: benar → bonus. */
+  catatFokus(benar) {
+    if (!benar) return 0;
+    this.stat.fokus++;
+    this.skor += POIN_FOKUS;
+    return POIN_FOKUS;
+  }
+
+  catatTabrakan() { this.stat.tabrakan++; }
 
   bersihkanTimer() {
     for (const s of this.daftar) hapusLokal(`sq_mulai_${this.idSesi}_${s.id}`);
@@ -81,7 +117,7 @@ export class SesiOffline extends Sesi {
       p = {
         nama, kelas, seed: Math.random().toString(36).slice(2),
         urutan: kocok(ids).slice(0, jumlah),
-        indeks: 0, benar: 0, salah: 0, skor: 0, jawaban: {}
+        indeks: 0, benar: 0, salah: 0, skor: 0, combo: 0, stat: null, jawaban: {}
       };
     }
     sesi.p = p;
@@ -90,26 +126,26 @@ export class SesiOffline extends Sesi {
     sesi.idSesi = `off_${p.seed}`;
     sesi.kesulitan = pengaturanGame.kesulitan;
     sesi.daftar = p.urutan.map((id) => sesi.susunSoal(id, bank[id], true, p.seed));
-    Object.assign(sesi, { indeks: p.indeks, benar: p.benar, salah: p.salah, skor: p.skor });
+    Object.assign(sesi, { indeks: p.indeks, benar: p.benar, salah: p.salah, skor: p.skor, combo: p.combo || 0 });
+    if (p.stat) sesi.stat = { ...sesi.stat, ...p.stat };
     sesi.simpan();
     return sesi;
   }
 
   simpan() {
-    Object.assign(this.p, { indeks: this.indeks, benar: this.benar, salah: this.salah, skor: this.skor });
+    Object.assign(this.p, { indeks: this.indeks, benar: this.benar, salah: this.salah, skor: this.skor, combo: this.combo, stat: this.stat });
     simpanLokal(SesiOffline.KUNCI, this.p);
   }
 
   async jawab(id, pilihan, durasi, sisa) {
     const benar = pilihan !== '-' && this.kunciJawaban[id] === pilihan;
-    this.poinTerakhir = this.hitungPoin(benar, sisa);
-    if (benar) this.benar++; else this.salah++;
-    this.skor += this.poinTerakhir;
+    this.catatJawaban(benar, sisa);
     this.p.jawaban[id] = { pilihan, benar, durasi };
-    this.indeks++;
     this.simpan();
     return benar;
   }
+
+  sinkronStat() { this.simpan(); }
 
   async selesai() {
     this.bersihkanTimer();
@@ -127,14 +163,14 @@ export class SesiOnline extends Sesi {
   static async masuk({ pin, nama, kelas }) {
     const fb = await import('./firebase.js');
     await fb.inisialisasi();
-    const { uid, info, siswa, semuaSoal, jawaban } = await fb.masukSiswa({ pin, nama, kelas });
+    const { sid, info, siswa, semuaSoal, jawaban } = await fb.masukSiswa({ pin, nama, kelas });
 
     const sesi = new SesiOnline();
     sesi.fb = fb;
     sesi.pin = pin;
-    sesi.uid = uid;
+    sesi.sid = sid; // ID siswa = nama lengkap yang dinormalkan
     sesi.info = info;
-    sesi.idSesi = `${pin}_${uid}`;
+    sesi.idSesi = `${pin}_${sid}`;
     sesi.nama = siswa.nama;
     sesi.kelas = siswa.kelas;
     sesi.judul = info.judul || 'Kuis';
@@ -143,9 +179,9 @@ export class SesiOnline extends Sesi {
     sesi.kesulitan = info.kesulitan || pengaturanGame.kesulitan;
 
     const ids = Object.entries(siswa.urutan || {}).sort((a, b) => a[1] - b[1]).map(([id]) => id).filter((id) => semuaSoal[id]);
-    sesi.daftar = ids.map((id) => sesi.susunSoal(id, semuaSoal[id], info.acakOpsi, uid));
+    sesi.daftar = ids.map((id) => sesi.susunSoal(id, semuaSoal[id], info.acakOpsi, sid));
 
-    // Lanjutkan dari soal pertama yang belum dijawab (setelah refresh)
+    // Lanjutkan dari soal pertama yang belum dijawab (setelah refresh / kuis dibuka lagi)
     let i = 0;
     while (i < ids.length && jawaban[ids[i]]) i++;
     sesi.indeks = i;
@@ -154,7 +190,8 @@ export class SesiOnline extends Sesi {
       if (jawaban[id].benar) sesi.benar++; else sesi.salah++;
     }
     sesi.skor = siswa.skor || 0;
-    sesi.sudahSelesai = siswa.status === 'selesai';
+    sesi.stat = { ...sesi.stat, tabrakan: siswa.tabrakan || 0, cincin: siswa.cincin || 0, fokus: siswa.fokus || 0 };
+    sesi.sudahSelesai = sesi.selesaiSemua;
     return sesi;
   }
 
@@ -166,26 +203,38 @@ export class SesiOnline extends Sesi {
   }
 
   async mulaiBermain() {
-    await this.fb.updateSiswa(this.pin, this.uid, { status: 'bermain' }).catch(() => {});
+    await this.fb.updateSiswa(this.pin, this.sid, { status: 'bermain' }).catch(() => {});
+  }
+
+  dataSkor() {
+    return {
+      soalKe: this.indeks, benar: this.benar, salah: this.salah, skor: this.skor, nilai: this.nilai,
+      tabrakan: this.stat.tabrakan, cincin: this.stat.cincin, fokus: this.stat.fokus,
+      status: this.selesaiSemua ? 'selesai' : 'bermain'
+    };
   }
 
   async jawab(id, pilihan, durasi, sisa) {
-    const benar = await this.fb.kirimJawaban(this.pin, this.uid, id, pilihan, durasi);
-    this.poinTerakhir = this.hitungPoin(benar, sisa);
-    if (benar) this.benar++; else this.salah++;
-    this.skor += this.poinTerakhir;
-    this.indeks++;
-    this.fb.updateSiswa(this.pin, this.uid, {
-      soalKe: this.indeks, benar: this.benar, salah: this.salah, skor: this.skor, nilai: this.nilai,
-      status: this.selesaiSemua ? 'selesai' : 'bermain'
-    }).catch((e) => console.warn('Gagal memperbarui skor', e));
+    const benar = await this.fb.kirimJawaban(this.pin, this.sid, id, pilihan, durasi);
+    this.catatJawaban(benar, sisa);
+    this.fb.updateSiswa(this.pin, this.sid, this.dataSkor()).catch((e) => console.warn('Gagal memperbarui skor', e));
     return benar;
   }
 
+  /** Mengirim statistik (tabrakan dsb.) paling sering tiap 3 detik. */
+  sinkronStat() {
+    if (this._tundaStat) return;
+    this._tundaStat = setTimeout(() => {
+      this._tundaStat = null;
+      this.fb.updateSiswa(this.pin, this.sid, this.dataSkor()).catch(() => {});
+    }, 3000);
+  }
+
   async selesai() {
-    this.bersihkanTimer();
-    await this.fb.updateSiswa(this.pin, this.uid, {
-      soalKe: this.indeks, benar: this.benar, salah: this.salah, skor: this.skor, nilai: this.nilai, status: 'selesai'
-    }).catch(() => {});
+    clearTimeout(this._tundaStat);
+    if (this.selesaiSemua) this.bersihkanTimer();
+    // Bila kuis diakhiri guru sebelum semua soal dijawab, status tetap "bermain"
+    // agar siswa bisa melanjutkan jika guru membuka room ini lagi.
+    await this.fb.updateSiswa(this.pin, this.sid, this.dataSkor()).catch(() => {});
   }
 }

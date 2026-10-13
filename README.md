@@ -26,19 +26,26 @@ Tanpa Firebase pun game tetap bisa dimainkan dalam **mode offline (latihan)** me
 ## 1. Fitur
 
 **Siswa**
-- Masuk dengan Nama, Kelas/Absen, dan PIN 6 digit (bisa juga lewat tautan `index.html?pin=123456`).
+- Masuk dengan Nama Lengkap, Kelas, dan PIN 6 digit (bisa juga lewat tautan `index.html?pin=123456`).
 - Ruang tunggu sampai guru menekan **Mulai** (mode PIN), atau langsung main (mode Langsung).
 - Kendali keyboard (panah / WASD) dan **joystick virtual** di layar sentuh.
 - Soal pilihan ganda dengan timer; jawab dengan klik atau tombol 1–4.
-- Rute panjang (±1 km per soal) dengan **belokan tajam**: di tikungan pesawat terdorong ke sisi luar, siswa harus menahan arah belokan. Papan chevron kuning-hitam & peringatan di layar menandai tikungan.
+- Rute panjang (±0,9–1,4 km per soal, 30–50 detik terbang) dengan **belokan tajam**: di tikungan pesawat terdorong ke sisi luar, siswa harus menahan arah belokan. Hanya sisi luar yang dipasangi rambu chevron kuning-hitam — menabraknya = hancur; sisi lain (dan semua tepi jalur di bagian lurus) hanya **mentok/tertahan** dengan efek tepi layar menyala.
+- **Peringatan singkat** (belokan, pesawat lawan arah, UFO, meteor) tampil sekali selama **4 / 3 / 2 detik** sesuai kesulitan Mudah / Sedang / Sulit — melatih konsentrasi.
+- **Hitung mundur 3-2-1** sebelum terbang dan setelah muncul ulang di checkpoint.
 - **Rintangan** sesuai tema: tiang, palang tinggi/rendah, pesawat lawan arah (Kota/Gurun), meteor terbang, UFO & asteroid (Angkasa), meteor jatuh & obelisk (Gurun).
 - **Gerbang presisi**: pintu **bersinar** bila posisi pesawat sudah pas; masuk tidak pas = menabrak bingkai.
 - Menabrak rintangan / gagal berbelok / tidak pas di gerbang → **pesawat hancur** dan muncul lagi di **checkpoint** (gerbang terakhir yang dilewati), dengan kebal 2 detik.
 - **Mode bantuan otomatis**: setelah 3x hancur di bagian yang sama, rintangan bagian itu dihilangkan dan pintu lebih longgar — agar ujian tetap menilai pengetahuan, bukan hanya keterampilan bermain.
 - Benar → poin + bonus kecepatan, efek konfeti, dunia berganti tema. Salah / waktu habis → tanpa poin, lanjut ke rute berikutnya.
 - Tombol **layar penuh** & suara di kanan atas.
+- **Fitur konsentrasi & kognitif**:
+  - ★ **Cincin bintang** berantai — makin banyak berturut-turut, makin besar bonus (latihan fokus & koordinasi mata-tangan).
+  - 🎯 **Tantangan pintu (efek Stroop)**: di layar muncul nama warna yang ditulis dengan tinta warna lain (mis. kata **BIRU** berwarna merah). Masuk pintu sesuai **KATA** → bonus. Melatih kontrol diri/inhibisi & perhatian selektif. Peluang kata-tinta berbeda: 30% (Mudah), 65% (Sedang), 100% (Sulit). Pintu mana pun tetap memunculkan soal; benar/salah soal tidak terpengaruh.
+  - 🔥 **Combo**: jawaban benar berturut-turut melipatgandakan poin (hingga ×2).
+  - Layar hasil menampilkan statistik konsentrasi: cincin, tantangan fokus, combo terbaik, jumlah tabrakan.
 - **Refresh aman**: halaman ter-refresh → tekan MASUK lagi → lanjut dari soal terakhir (timer tidak ter-reset).
-- Satu nama+kelas hanya bisa dipakai di satu perangkat per room.
+- **Nama lengkap adalah identitas peserta** di satu room: nama yang sama (huruf besar/kecil & spasi diabaikan) tidak bisa ikut dua kali. **Satu perangkat boleh dipakai bergantian** oleh beberapa siswa dengan nama berbeda (cocok untuk sekolah yang kekurangan perangkat).
 
 **Guru**
 - Login email/kata sandi. Akun guru pertama otomatis menjadi pengelola; guru lain ditambahkan lewat menu **Akun Guru**.
@@ -46,7 +53,8 @@ Tanpa Firebase pun game tetap bisa dimainkan dalam **mode offline (latihan)** me
 - **Impor soal dari CSV/Excel** (kolom: `soal, a, b, c, d, kunci`; opsional `mapel, gambar`).
 - **Buat room**: pilih paket, jumlah soal (mis. 10 dari 12), waktu per soal, **tingkat kesulitan rute** (Mudah/Sedang/Sulit), acak soal/opsi, mode PIN/Langsung → PIN 6 digit acak.
 - **Pantau live**: tabel ala leaderboard (nama, kelas, soal ke-, benar, salah, skor, nilai, status online/selesai).
-- Tombol **Mulai**, **Akhiri**, **Ekspor Excel** (3 sheet: Rekap Nilai, Detail Jawaban per soal, Daftar Soal) dan **Ekspor CSV**.
+- Tombol **Mulai**, **Akhiri**, **Mulai lagi** (room yang sudah diakhiri bisa dibuka lagi, mis. untuk kelas lain di jam berbeda — rekap tetap di satu room), **Ekspor Excel** (3 sheet: Rekap Nilai, Detail Jawaban per soal, Daftar Soal) dan **Ekspor CSV**.
+- Kolom **Konsentrasi** di tabel live: 💥 tabrakan · ★ cincin · 🎯 tantangan fokus benar.
 - Tombol **Reset** per siswa (bila siswa ganti perangkat / salah ketik nama).
 - Semua tindakan penting (Akhiri, Reset, Hapus, Keluar) memakai **jendela konfirmasi** yang jelas, dan tersedia tombol **layar penuh** di kanan atas.
 
@@ -190,11 +198,13 @@ Firebase Console → **Authentication → Settings → Authorized domains** → 
 - Tabel siswa ter-update **otomatis** (realtime), diurutkan seperti leaderboard.
 - **▶ Mulai**: siswa di ruang tunggu langsung mulai bermain.
 - **■ Akhiri**: semua siswa langsung melihat layar hasil; soal yang belum dijawab dihitung tidak dijawab.
-- **Reset** (per siswa): menghapus data siswa itu di room ini agar ia bisa masuk ulang dari awal (mis. HP mati lalu pindah perangkat, atau salah ketik nama).
+- **▶ Mulai lagi** (muncul setelah room diakhiri): membuka room yang sama untuk sesi/kelas berikutnya. Nilai siswa yang sudah selesai tetap tersimpan dan nama mereka tidak bisa mengulang; siswa yang tadi terhenti bisa melanjutkan sisa soalnya.
+- **Siswa yang mengulang dengan nama sedikit berbeda** (mis. "Budi" lalu "Budi S") akan tampil sebagai dua baris. Kolom *Waktu Masuk* di Excel membantu guru mengenalinya dan memilih nilai yang dipakai.
+- **Reset** (per siswa): menghapus data siswa itu di room ini agar namanya bisa dipakai masuk ulang dari awal (mis. HP mati lalu pindah perangkat).
 - Status **Offline** berarti perangkat siswa terputus/tab ditutup. Jika ia membuka lagi di perangkat yang sama dan menekan MASUK, ia melanjutkan dari soal terakhir.
 
 ### 4.4 Ekspor nilai
-- **⬇ Excel** → file `.xlsx` berisi 3 sheet: *Rekap Nilai*, *Detail Jawaban* (jawaban tiap siswa per soal + baris kunci), *Daftar Soal*.
+- **⬇ Excel** → file `.xlsx` berisi 3 sheet: *Rekap Nilai* (termasuk Tabrakan, Cincin Bintang, Tantangan Fokus, Waktu Masuk, Terakhir Aktif), *Detail Jawaban* (jawaban tiap siswa per soal + baris kunci), *Daftar Soal*.
 - **⬇ CSV** → hanya rekap nilai.
 - Room lama bisa dibuka lagi kapan saja dari **Daftar Room** → **Pantau**. Hapus room (🗑) bila datanya sudah tidak diperlukan.
 
@@ -209,7 +219,7 @@ Firebase Console → **Authentication → Settings → Authorized domains** → 
 
 ## 5. Panduan siswa
 1. Buka alamat game dari guru (atau tautan berisi PIN).
-2. Isi **Nama Lengkap**, **Kelas/No. Absen**, dan **PIN** → **MASUK**. Pilih tema awal bila mau.
+2. Isi **Nama Lengkap**, **Kelas**, dan **PIN** → **MASUK**. Gunakan nama lengkap yang sama bila ingin melanjutkan. Pilih tema awal bila mau.
 3. Kendalikan pesawat:
    - Laptop/Chromebook: **← ↑ ↓ →** atau **W A S D**
    - HP/tablet: **joystick** di kiri bawah layar
@@ -295,11 +305,14 @@ kunci/{paketId}/{soalId}: "a" | "b" | "c" | "d"                          ← han
 daftarRoom/{PIN}: { judul, namaPaket, dibuatOleh, dibuatPada }
 rooms/{PIN}/info: { judul, paketId, jumlahSoal, waktuPerSoal, acakSoal, acakOpsi, kesulitan: "mudah"|"sedang"|"sulit",
                     mode: "pin"|"langsung", status: "menunggu"|"berjalan"|"selesai", dibuatOleh, dibuatPada }
-rooms/{PIN}/namaIndex/{nama__kelas}: uidSiswa                            ← cegah masuk ganda
-rooms/{PIN}/siswa/{uid}: { nama, kelas, soalKe, benar, salah, skor, nilai,
-                           status: "menunggu"|"bermain"|"selesai", online, terakhirAktif, urutan }
-rooms/{PIN}/jawaban/{uid}/{soalId}: { pilihan, benar, waktu, durasi }
+rooms/{PIN}/namaIndex/{namaSiswa}: uidPerangkat                         ← nama dikunci ke perangkat yang memakainya
+rooms/{PIN}/siswa/{namaSiswa}: { nama, kelas, pemilik, soalKe, benar, salah, skor, nilai,
+                                 tabrakan, cincin, fokus,
+                                 status: "menunggu"|"bermain"|"selesai", online, bergabung, terakhirAktif, urutan }
+rooms/{PIN}/jawaban/{namaSiswa}/{soalId}: { pilihan, benar, waktu, durasi }
 ```
+`namaSiswa` = nama lengkap huruf kecil, spasi menjadi `_` (mis. `budi_santoso`). Satu perangkat bisa memiliki beberapa nama; hanya perangkat pemilik nama yang boleh menulis/membaca data nama tersebut.
+
 Perbedaan dari rancangan awal: pengaturan room dipindah ke `rooms/{PIN}/info` dan kunci dipisah ke `kunci/…`, agar siswa bisa membaca pengaturan room **tanpa** bisa membaca data siswa lain maupun kunci jawaban.
 
 ---
@@ -315,7 +328,8 @@ Perbedaan dari rancangan awal: pengaturan room dipindah ke `rooms/{PIN}/info` da
 | "Gagal masuk ke server … Anonymous" | Aktifkan provider **Anonymous** (langkah 2.2). |
 | "Login Email/Password belum diaktifkan" | Aktifkan provider **Email/Password** (langkah 2.2). |
 | Guru baru: "belum terdaftar sebagai guru" | Guru pengelola menambahkan emailnya di tab **Akun Guru**. |
-| Siswa: "Nama … sudah masuk di perangkat lain" | Guru menekan **Reset** pada nama siswa tersebut. |
+| Siswa: "Nama … sudah dipakai peserta lain" | Nama itu sudah dipakai di perangkat lain. Bila memang siswa yang sama pindah perangkat, guru menekan **Reset** pada namanya. |
+| Setelah memperbarui game, siswa mendapat "Akses ditolak" | Pasang ulang isi `database.rules.json` terbaru di Firebase → Realtime Database → Rules → **Publish**. |
 | Game patah-patah di Chromebook | Set `kualitas: "rendah"` di `config.js`, tutup tab lain. |
 | Siswa kesulitan melewati rintangan/belokan | Buat room dengan kesulitan **Mudah**. Mode bantuan juga aktif otomatis setelah 3x gagal. |
 | Tombol layar penuh tidak muncul | Browser (mis. Safari iPhone) tidak mendukung layar penuh untuk halaman web. |

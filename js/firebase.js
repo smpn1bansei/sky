@@ -56,8 +56,10 @@ async function loginAnonim() {
 
 /**
  * Siswa bergabung ke room.
- * - Satu nama+kelas hanya boleh dipakai satu perangkat (namaIndex).
- * - Bila siswa sudah pernah masuk (refresh), data lama dipakai → lanjut dari soal terakhir.
+ * - ID siswa = NAMA LENGKAP yang dinormalkan (huruf kecil, spasi dirapikan).
+ *   Nama yang sama tidak bisa dipakai dua kali di satu room.
+ * - Satu perangkat boleh dipakai bergantian oleh beberapa siswa dengan nama berbeda.
+ * - Nama yang sama di perangkat yang sama = siswa yang sama → lanjut dari soal terakhir.
  */
 export async function masukSiswa({ pin, nama, kelas }) {
   const uid = await loginAnonim();
@@ -65,33 +67,36 @@ export async function masukSiswa({ pin, nama, kelas }) {
   try {
     info = (await D.get(r(`rooms/${pin}/info`))).val();
   } catch (e) {
-    if (izinDitolak(e)) throw new PesanError('Akses ditolak. Pastikan Security Rules sudah dipasang (lihat README).');
+    if (izinDitolak(e)) throw new PesanError('Akses ditolak. Pastikan Security Rules terbaru sudah dipasang (lihat README).');
     throw e;
   }
   if (!info) throw new PesanError('PIN tidak ditemukan. Periksa kembali 6 digit PIN dari guru.');
-  if (info.status === 'selesai') throw new PesanError('Kuis dengan PIN ini sudah diakhiri oleh guru.');
+  if (info.status === 'selesai') throw new PesanError('Kuis dengan PIN ini sedang ditutup oleh guru. Tunggu guru membukanya lagi.');
 
-  const siswaRef = r(`rooms/${pin}/siswa/${uid}`);
+  const sid = kunciNama(nama);
+  if (!sid) throw new PesanError('Nama tidak valid.');
+  // Mengklaim nama: berhasil bila nama belum dipakai, atau dipakai oleh perangkat ini sendiri.
+  try {
+    await D.set(r(`rooms/${pin}/namaIndex/${sid}`), uid);
+  } catch (e) {
+    if (izinDitolak(e)) {
+      throw new PesanError(`Nama "${nama}" sudah dipakai peserta lain di kuis ini. Gunakan nama lengkapmu yang berbeda, atau minta guru menekan "Reset" bila itu memang kamu (pindah perangkat).`);
+    }
+    throw e;
+  }
+
+  const siswaRef = r(`rooms/${pin}/siswa/${sid}`);
   let siswa = (await D.get(siswaRef)).val();
   const semuaSoal = (await D.get(r(`soal/${info.paketId}`))).val() || {};
 
   if (!siswa) {
-    const kunci = kunciNama(nama, kelas);
-    try {
-      await D.set(r(`rooms/${pin}/namaIndex/${kunci}`), uid);
-    } catch (e) {
-      if (izinDitolak(e)) {
-        throw new PesanError(`Nama "${nama}" (kelas ${kelas}) sudah masuk di perangkat lain. Jika itu kamu, minta guru menekan tombol "Reset" pada namamu.`);
-      }
-      throw e;
-    }
     const ids = Object.keys(semuaSoal).sort();
     if (!ids.length) throw new PesanError('Paket soal untuk kuis ini masih kosong. Hubungi guru.');
-    const rng = acakBerseed(hashString(uid + pin));
+    const rng = acakBerseed(hashString(sid + pin));
     const terpilih = (info.acakSoal ? kocok(ids, rng) : ids).slice(0, Math.min(info.jumlahSoal, ids.length));
     siswa = {
-      nama, kelas, kunciNama: kunci,
-      soalKe: 0, benar: 0, salah: 0, skor: 0, nilai: 0,
+      nama, kelas, pemilik: uid,
+      soalKe: 0, benar: 0, salah: 0, skor: 0, nilai: 0, tabrakan: 0, cincin: 0, fokus: 0,
       status: info.status === 'berjalan' ? 'bermain' : 'menunggu',
       online: true,
       bergabung: D.serverTimestamp(),
@@ -101,23 +106,30 @@ export async function masukSiswa({ pin, nama, kelas }) {
     await D.update(siswaRef, siswa);
   }
 
-  const jawaban = (await D.get(r(`rooms/${pin}/jawaban/${uid}`))).val() || {};
-  pasangPresence(pin, uid);
-  return { uid, info, siswa, semuaSoal, jawaban };
+  const jawaban = (await D.get(r(`rooms/${pin}/jawaban/${sid}`))).val() || {};
+  try { pasangPresence(pin, sid); } catch (e) { console.warn('Status online gagal dipasang', e); }
+  return { sid, info, siswa, semuaSoal, jawaban };
 }
 
-let presenceAktif = false;
-function pasangPresence(pin, uid) {
-  if (presenceAktif) return;
-  presenceAktif = true;
-  const onlineRef = r(`rooms/${pin}/siswa/${uid}/online`);
-  D.onValue(r('.info/connected'), (s) => {
+// Status online siswa. Bila perangkat dipakai siswa lain, status siswa sebelumnya dimatikan.
+let presence = null;
+function pasangPresence(pin, sid) {
+  const path = `rooms/${pin}/siswa/${sid}/online`;
+  if (presence?.path === path) return;
+  if (presence) {
+    presence.lepas();
+    D.onDisconnect(presence.ref).cancel().catch(() => {});
+    D.set(presence.ref, false).catch(() => {});
+  }
+  const onlineRef = r(path);
+  const lepas = D.onValue(r('.info/connected'), (s) => {
     if (s.val() === true) {
       D.onDisconnect(onlineRef).set(false)
         .then(() => D.set(onlineRef, true))
         .catch(() => {});
     }
   });
+  presence = { path, ref: onlineRef, lepas };
 }
 
 /**
@@ -125,8 +137,8 @@ function pasangPresence(pin, uid) {
  * jawaban ditulis dengan klaim benar=true; Security Rules membandingkan dengan
  * /kunci (yang hanya bisa dibaca guru). Jika ditolak → tulis ulang benar=false.
  */
-export async function kirimJawaban(pin, uid, soalId, pilihan, durasi) {
-  const jr = r(`rooms/${pin}/jawaban/${uid}/${soalId}`);
+export async function kirimJawaban(pin, sid, soalId, pilihan, durasi) {
+  const jr = r(`rooms/${pin}/jawaban/${sid}/${soalId}`);
   const data = (benar) => ({ pilihan, benar, waktu: D.serverTimestamp(), durasi: Math.round(durasi * 10) / 10 });
   if (pilihan !== '-') {
     try {
@@ -148,8 +160,8 @@ export async function kirimJawaban(pin, uid, soalId, pilihan, durasi) {
   }
 }
 
-export async function updateSiswa(pin, uid, data) {
-  await D.update(r(`rooms/${pin}/siswa/${uid}`), { ...data, terakhirAktif: D.serverTimestamp() });
+export async function updateSiswa(pin, sid, data) {
+  await D.update(r(`rooms/${pin}/siswa/${sid}`), { ...data, terakhirAktif: D.serverTimestamp() });
 }
 
 export function pantauStatusRoom(pin, cb) {
@@ -344,11 +356,10 @@ export async function hapusRoom(pin) {
 }
 
 /** Menghapus siswa dari room (agar bisa masuk ulang dari perangkat lain). */
-export async function resetSiswa(pin, uid, kunci) {
-  const p = {
-    [`rooms/${pin}/siswa/${uid}`]: null,
-    [`rooms/${pin}/jawaban/${uid}`]: null
-  };
-  if (kunci) p[`rooms/${pin}/namaIndex/${kunci}`] = null;
-  await D.update(D.ref(db), p);
+export async function resetSiswa(pin, sid) {
+  await D.update(D.ref(db), {
+    [`rooms/${pin}/siswa/${sid}`]: null,
+    [`rooms/${pin}/jawaban/${sid}`]: null,
+    [`rooms/${pin}/namaIndex/${sid}`]: null
+  });
 }

@@ -26,18 +26,24 @@
     <div class="hud-kiri">
       <div class="hud-kotak"><small>SOAL</small><b id="hud-soal">1/10</b></div>
       <div class="hud-kotak"><small>BENAR</small><b id="hud-benar">0</b></div>
+      <div class="hud-kotak cincin"><small>CINCIN</small><b>★ <span id="hud-cincin">0</span></b></div>
     </div>
-    <div class="hud-kotak skor"><small>SKOR</small><b id="hud-skor">0</b></div>
+    <div class="hud-tengah">
+      <div class="hud-kotak skor"><small>SKOR</small><b id="hud-skor">0</b></div>
+      <div class="hud-progres" title="Perjalanan menuju gerbang"><span class="ikon-pesawat">✈</span><div class="jalur"><div id="hud-progres-isi"></div></div><span class="ikon-gerbang">⛩</span></div>
+      <div id="hud-combo"></div>
+    </div>
     <div class="hud-kanan">
       <span class="chip-tema" id="hud-tema">Kota</span>
-      <div class="hud-kotak"><small>GERBANG</small><b id="hud-jarak">0 m</b></div>
     </div>
   </div>
   <div class="tombol-pojok">
     <button id="btn-suara" class="btn-ikon" aria-label="Suara hidup/mati" title="Suara">🔊</button>
     <button id="btn-layar-penuh" class="btn-ikon" aria-label="Layar penuh" title="Layar penuh"></button>
   </div>
-  <div id="banner">PILIH LINTASAN!</div>
+  <div id="banner"><div class="atas">PILIH LINTASAN! · Masuk pintu</div><div class="kata">BIRU</div><div class="bawah">baca KATANYA, abaikan warna hurufnya</div></div>
+  <div id="hitung-mundur"></div>
+  <div id="mentok" aria-hidden="true"></div>
   <div id="peringatan-belok"></div>
   <div id="peringatan-bahaya"></div>
   <div id="banner-hancur" role="alert">
@@ -46,6 +52,7 @@
     <div class="catatan"></div>
   </div>
   <div id="popup-poin"></div>
+  <div id="popup-kecil"></div>
   <div id="joystick" aria-hidden="true"><div class="kenop"></div></div>
 
   <!-- Modal soal -->
@@ -56,6 +63,7 @@
         <span class="timer"><span class="timer-teks">30</span> dtk</span>
       </div>
       <div class="timer-bar"><div class="timer-isi"></div></div>
+      <div class="info-fokus" hidden></div>
       <p class="teks-soal"></p>
       <img class="gambar-soal" alt="Gambar soal" hidden>
       <div class="opsi"></div>
@@ -78,8 +86,8 @@
         <label>Nama Lengkap
           <input id="in-nama" maxlength="40" required placeholder="mis. Budi Santoso">
         </label>
-        <label>Kelas / No. Absen
-          <input id="in-kelas" maxlength="20" required placeholder="mis. 8A-12">
+        <label>Kelas
+          <input id="in-kelas" maxlength="20" required placeholder="mis. 8A">
         </label>
         <label id="lbl-pin">PIN Kuis
           <input id="in-pin" inputmode="numeric" maxlength="6" placeholder="6 digit dari guru" class="input-pin">
@@ -99,8 +107,10 @@
         <summary>Cara bermain</summary>
         <ul>
           <li>🛣️ Ikuti rute. Di <b>belokan tajam</b> pesawat terdorong ke luar — <b>tahan arah belokan</b> (lihat papan panah kuning).</li>
-          <li>🚧 Hindari tiang, palang, pesawat lain, UFO, dan meteor.</li>
-          <li>🚪 Masuki salah satu pintu berwarna dengan <b>tepat</b>: pintu <b>bersinar</b> artinya posisimu sudah pas.</li>
+          <li>🚧 Hindari tiang, palang, pesawat lain, UFO, dan meteor. Peringatan hanya muncul sebentar — tetap fokus!</li>
+          <li>★ Lewati <b>cincin bintang</b> berturut-turut untuk bonus berlipat.</li>
+          <li>🚪 Masuki pintu dengan <b>tepat</b> (pintu <b>bersinar</b> = posisimu pas). <b>Tantangan fokus:</b> pilih pintu sesuai <b>KATA</b> warna di layar, bukan warna hurufnya → bonus!</li>
+          <li>🔥 Jawab benar berturut-turut untuk <b>COMBO</b> poin.</li>
           <li>💥 Menabrak / gagal berbelok / tidak pas di pintu = pesawat hancur dan <b>mengulang dari gerbang terakhir</b>.</li>
         </ul>
       </details>
@@ -132,6 +142,14 @@
         <div><b id="hasil-kosong">0</b><small>Tidak dijawab</small></div>
         <div class="kuning"><b id="hasil-skor">0</b><small>Skor</small></div>
       </div>
+      <h3>Konsentrasi</h3>
+      <div class="statistik kecil-stat">
+        <div><b id="hasil-cincin">0</b><small>Cincin ★</small></div>
+        <div><b id="hasil-fokus">0</b><small>Tantangan fokus</small></div>
+        <div><b id="hasil-combo">0</b><small>Combo terbaik</small></div>
+        <div><b id="hasil-tabrakan">0</b><small>Tabrakan</small></div>
+      </div>
+      <p id="hasil-rating" class="rating-fokus"></p>
       <p id="hasil-catatan" class="kecil"></p>
       <div id="hasil-riwayat" hidden>
         <h3>Riwayat di perangkat ini</h3>

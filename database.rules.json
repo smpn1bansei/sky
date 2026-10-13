@@ -46,65 +46,77 @@
           }
         },
         "namaIndex": {
-          "$kunci": {
+          "$sid": {
             ".write": "auth != null && newData.val() === auth.uid && (!data.exists() || data.val() === auth.uid) && root.child('rooms').child($pin).child('info/status').exists() && root.child('rooms').child($pin).child('info/status').val() !== 'selesai'"
           }
         },
         "siswa": {
-          "$uid": {
-            ".read": "auth != null && auth.uid === $uid",
+          "$sid": {
+            ".read": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
             "nama": {
-              ".write": "auth != null && auth.uid === $uid && !data.exists()",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid && !data.exists()",
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40"
             },
             "kelas": {
-              ".write": "auth != null && auth.uid === $uid && !data.exists()",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid && !data.exists()",
               ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
             },
-            "kunciNama": {
-              ".write": "auth != null && auth.uid === $uid && !data.exists()",
-              ".validate": "newData.isString() && root.child('rooms').child($pin).child('namaIndex').child(newData.val()).val() === auth.uid"
+            "pemilik": {
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid && !data.exists()",
+              ".validate": "newData.val() === auth.uid"
             },
             "urutan": {
-              ".write": "auth != null && auth.uid === $uid && !data.exists()",
-              "$sid": {
-                ".validate": "newData.isNumber() && root.child('soal').child(root.child('rooms').child($pin).child('info/paketId').val()).child($sid).exists()"
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid && !data.exists()",
+              "$soalId": {
+                ".validate": "newData.isNumber() && root.child('soal').child(root.child('rooms').child($pin).child('info/paketId').val()).child($soalId).exists()"
               }
             },
             "soalKe": {
-              ".write": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
             },
             "benar": {
-              ".write": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
             },
             "salah": {
-              ".write": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
             },
             "skor": {
-              ".write": "auth != null && auth.uid === $uid",
-              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
             },
             "nilai": {
-              ".write": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
             },
+            "tabrakan": {
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "cincin": {
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            },
+            "fokus": {
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
+            },
             "status": {
-              ".write": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
               ".validate": "newData.val() === 'menunggu' || newData.val() === 'bermain' || newData.val() === 'selesai'"
             },
             "online": {
-              ".write": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
               ".validate": "newData.isBoolean()"
             },
             "bergabung": {
-              ".write": "auth != null && auth.uid === $uid && !data.exists()",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid && !data.exists()",
               ".validate": "newData.isNumber()"
             },
             "terakhirAktif": {
-              ".write": "auth != null && auth.uid === $uid",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
               ".validate": "newData.isNumber()"
             },
             "$lain": {
@@ -113,10 +125,10 @@
           }
         },
         "jawaban": {
-          "$uid": {
-            ".read": "auth != null && auth.uid === $uid",
+          "$sid": {
+            ".read": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid",
             "$soalId": {
-              ".write": "auth != null && auth.uid === $uid && !data.exists() && root.child('rooms').child($pin).child('info/status').val() === 'berjalan' && root.child('rooms').child($pin).child('siswa').child($uid).child('urutan').child($soalId).exists()",
+              ".write": "auth != null && root.child('rooms').child($pin).child('namaIndex').child($sid).val() === auth.uid && !data.exists() && root.child('rooms').child($pin).child('info/status').val() === 'berjalan' && root.child('rooms').child($pin).child('siswa').child($sid).child('urutan').child($soalId).exists()",
               ".validate": "newData.hasChildren(['pilihan', 'benar', 'waktu']) && newData.child('benar').val() === (newData.child('pilihan').val() === root.child('kunci').child(root.child('rooms').child($pin).child('info/paketId').val()).child($soalId).val())",
               "pilihan": {
                 ".validate": "newData.isString() && newData.val().matches(/^[abcd-]$/)"

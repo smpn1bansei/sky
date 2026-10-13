@@ -35,7 +35,6 @@ const DEFINISI = {
 const lambert = (color, ekstra = {}) => new THREE.MeshLambertMaterial({ color, flatShading: true, ...ekstra });
 const antara = (a, b) => a + Math.random() * (b - a);
 const V = new THREE.Vector3();
-const V2 = new THREE.Vector3();
 
 export class Lintasan {
   constructor(scene, hemi, matahari, rute) {
@@ -82,7 +81,6 @@ export class Lintasan {
     this.putar = [];       // objek berputar
     this.tanah = null;
     this.matPita = null;
-    this.suar = null;
     this.scene.add(this.grup);
 
     if (nama === 'angkasa') bangunAngkasa(this);
@@ -137,7 +135,6 @@ export class Lintasan {
     }
     this.updatePita(sP);
     this.updateChevron(sP);
-    if (this.suar) this.updateSuar(sP);
   }
 
   // ---------- Jalan / jejak berbentuk pita mengikuti rute
@@ -189,25 +186,6 @@ export class Lintasan {
       this.grupChevron.add(g);
       this.chevron.set(b, g);
     }
-  }
-
-  // ---------- Lampu suar penanda tepi jalur (tema angkasa)
-  updateSuar(sP) {
-    const jarak = 20;
-    const awal = Math.floor((sP - 40) / jarak) * jarak;
-    const m = new THREE.Matrix4();
-    let i = 0;
-    for (let j = 0; j < 36; j++) {
-      const s = awal + j * jarak;
-      for (const lat of [-12.5, 12.5]) {
-        for (const y of [0.6, 12.4]) {
-          this.rute.posisi(s, lat, y, V2);
-          m.makeTranslation(V2.x, V2.y, V2.z);
-          this.suar.setMatrixAt(i++, m);
-        }
-      }
-    }
-    this.suar.instanceMatrix.needsUpdate = true;
   }
 
   buangObjek(obj, induk, buangMaterial = true) {
@@ -461,14 +439,8 @@ function bangunAngkasa(L) {
     dek(L, a, { latMin: 18, latMax: 75, y: antara(-45, 40), aman: 15 + r, i });
   }
 
-  // Suar penanda tepi jalur (sudut "terowongan" tak kasatmata)
-  L.suar = new THREE.InstancedMesh(
-    new THREE.OctahedronGeometry(0.45, 0),
-    new THREE.MeshBasicMaterial({ color: 0x67e8f9 }),
-    36 * 4
-  );
-  L.suar.frustumCulled = false;
-  L.grup.add(L.suar);
+  // Tanpa penanda tepi: pemandangan angkasa dibiarkan lepas.
+  // Bila pesawat terlalu melebar, pesawat hanya tertahan (mentok) di batas jalur.
 }
 
 // ---------------------------------------------------------------------

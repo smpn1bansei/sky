@@ -26,23 +26,38 @@ let sesi = null;
 let sedangMain = false;
 let sedangMenjawab = false;
 
-game.on('banner', (v) => hud.setBanner(v));
+game.on('banner', (v, tantangan) => hud.setBanner(v, tantangan));
 game.on('kilat', () => kilat());
 game.on('tema', (n) => hud.setTema(n));
-game.on('pintu', (i) => prosesPintu(i));
-game.on('jarak', (m) => hud.setJarak(m));
-game.on('belok', (info) => hud.setBelok(info));
-game.on('bahaya', (teks) => {
-  hud.setBahaya(teks);
-  if (teks) suara.waspada();
+game.on('pintu', (i, tantangan) => prosesPintu(i, tantangan));
+game.on('jarak', (sisa, total) => hud.setProgres(sisa, total));
+// Peringatan tampil sekali saja selama 4/3/2 detik (mudah/sedang/sulit)
+game.on('peringatan', (jenis, teks, durasi) => {
+  hud.peringatan(jenis, teks, durasi);
+  suara.waspada();
 });
+game.on('hitung', (n) => {
+  hud.hitung(n);
+  if (n > 0) suara.tik(); else suara.mulai();
+});
+game.on('mentok', (sisi) => hud.mentok(sisi));
+game.on('cincin', (rantai) => {
+  if (!sesi) return;
+  const poin = sesi.catatCincin(rantai);
+  suara.cincin(rantai);
+  hud.setCincin(sesi.stat.cincin);
+  hud.tampilkanPoinKecil(rantai >= 2 ? `★ +${poin}  ×${Math.min(5, rantai)}` : `★ +${poin}`);
+  hud.animasiSkor(sesi.skor);
+});
+game.on('cincinLewat', () => hud.tampilkanPoinKecil('★ terlewat', 'lewat'));
 game.on('hancur', (alasan, ke) => {
   suara.ledakan();
+  sesi?.catatTabrakan();
+  sesi?.sinkronStat();
   hud.tampilkanHancur(alasan, ke >= 2 ? `Percobaan ke-${ke + 1}. Mengulang dari gerbang terakhir…` : 'Mengulang dari gerbang terakhir…');
 });
 game.on('muncul', () => {
   hud.sembunyikanHancur();
-  suara.muncul();
 });
 game.on('bantuan', () => toast('Mode bantuan aktif: rintangan di bagian ini dihilangkan dan pintu lebih longgar.', 'info', 5000));
 pasangTombolLayarPenuh($('btn-layar-penuh'));
@@ -91,7 +106,7 @@ if (tersimpan) {
 if (pinUrl && /^\d{6}$/.test(pinUrl)) inPin.value = pinUrl;
 
 if (ONLINE) {
-  if (tersimpan?.pin && (!pinUrl || pinUrl === tersimpan.pin)) {
+  if (tersimpan?.pin && tersimpan?.nama && (!pinUrl || pinUrl === tersimpan.pin)) {
     $('info-lanjut').hidden = false;
     $('info-lanjut').textContent = `Halaman dimuat ulang? Tekan MASUK untuk melanjutkan sebagai ${tersimpan.nama}.`;
   }
@@ -131,7 +146,7 @@ form.addEventListener('submit', async (e) => {
   const kelas = inKelas.value.trim();
   const pin = inPin.value.trim();
   if (nama.length < 2) return (errEl.textContent = 'Nama minimal 2 huruf.');
-  if (!kelas) return (errEl.textContent = 'Kelas / No. Absen wajib diisi.');
+  if (!kelas) return (errEl.textContent = 'Kelas wajib diisi.');
   if (ONLINE && !/^\d{6}$/.test(pin)) return (errEl.textContent = 'PIN harus 6 digit angka.');
 
   btnMasuk.disabled = true;
@@ -202,15 +217,27 @@ function mulaiMain() {
   game.mulai({ kesulitan: sesi.kesulitan || pengaturanGame.kesulitan });
 }
 
-async function prosesPintu(i) {
+const NAMA_WARNA = ['MERAH', 'BIRU', 'KUNING', 'HIJAU'];
+
+async function prosesPintu(i, tantangan) {
   if (!sedangMain || sedangMenjawab) return;
   sedangMenjawab = true;
   suara.pintu();
+  // Tantangan fokus (Stroop): pintu sesuai KATA warna → bonus
+  let catatanFokus = null;
+  if (tantangan) {
+    const tepat = i === tantangan.kata;
+    const bonus = sesi.catatFokus(tepat);
+    catatanFokus = tepat
+      ? { teks: `🎯 Fokus! Pintu ${NAMA_WARNA[i]} tepat · +${bonus}`, baik: true }
+      : { teks: `🎯 Tantangan fokus: seharusnya pintu ${NAMA_WARNA[tantangan.kata]}`, baik: false };
+    hud.animasiSkor(sesi.skor);
+  }
   const soal = sesi.soalSekarang;
   const sisa = sesi.mulaiSoal(soal.id);
   const h = await modal.tampilkan({
     nomor: sesi.indeks + 1, total: sesi.total, teks: soal.teks, gambar: soal.gambar,
-    opsi: soal.opsi, waktu: sesi.waktuPerSoal, sisa, warna: PINTU[i].css
+    opsi: soal.opsi, waktu: sesi.waktuPerSoal, sisa, warna: PINTU[i].css, catatan: catatanFokus
   });
 
   let benar = false;
@@ -227,7 +254,7 @@ async function prosesPintu(i) {
   if (!gagal) {
     if (benar) suara.benar(); else suara.salah();
     hud.tampilkanPoin(benar ? `+${sesi.poinTerakhir}` : (h.habis ? 'Waktu habis' : 'Salah'), benar);
-    await modal.tampilkanHasil(benar, h.habis, sesi.poinTerakhir);
+    await modal.tampilkanHasil(benar, h.habis, sesi.poinTerakhir, sesi.combo);
   }
   modal.tutup();
   sedangMenjawab = false;
@@ -264,7 +291,14 @@ $('btn-keluar').addEventListener('click', keluar);
 
 function keluar() {
   sesi?.lepasStatus?.();
-  if (sesi?.sudahSelesai || sesi?.selesaiSemua) $('info-lanjut').hidden = true;
+  if (sesi?.sudahSelesai || sesi?.selesaiSemua) {
+    // Perangkat dipakai bergantian: kosongkan nama agar siswa berikutnya bisa langsung masuk
+    $('info-lanjut').hidden = true;
+    inNama.value = '';
+    inKelas.value = '';
+    const t = bacaLokal('sq_siswa');
+    if (t) simpanLokal('sq_siswa', { pin: t.pin });
+  }
   sesi = null;
   if (!ONLINE) perbaruiTombolLanjutOffline();
   tampilkanLayar('layar-login');
