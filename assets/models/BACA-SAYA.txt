@@ -1,0 +1,9 @@
+Letakkan model pesawat .glb di folder ini (misalnya dari https://kenney.nl/assets atau https://poly.pizza).
+
+Lalu buka config.js dan isi:
+  modelPesawat: "assets/models/nama-file.glb",
+  skalaModel: 1,            (perbesar/perkecil bila terlalu besar/kecil)
+  rotasiModelY: Math.PI,    (ubah ke 0 bila pesawat menghadap ke belakang)
+
+Jika file gagal dimuat, game otomatis memakai pesawat bawaan.
+Folder /assets/suara dan /assets/gambar disediakan untuk suara & gambar soal Anda sendiri.

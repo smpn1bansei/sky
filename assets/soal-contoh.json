@@ -1,0 +1,19 @@
+{
+  "judul": "Latihan Pengetahuan Umum SMP/SMA",
+  "waktuPerSoal": 30,
+  "jumlahSoal": 10,
+  "soal": [
+    { "id": "1", "mapel": "IPA", "soal": "Planet terbesar di tata surya kita adalah …", "a": "Bumi", "b": "Saturnus", "c": "Jupiter", "d": "Neptunus", "kunci": "c" },
+    { "id": "2", "mapel": "IPA", "soal": "Proses tumbuhan membuat makanan sendiri dengan bantuan cahaya matahari disebut …", "a": "Respirasi", "b": "Fotosintesis", "c": "Transpirasi", "d": "Evaporasi", "kunci": "b" },
+    { "id": "3", "mapel": "Matematika", "soal": "Hasil dari 12 × 15 adalah …", "a": "170", "b": "175", "c": "180", "d": "185", "kunci": "c" },
+    { "id": "4", "mapel": "Matematika", "soal": "Jika 3x + 5 = 20, maka nilai x adalah …", "a": "3", "b": "5", "c": "7", "d": "15", "kunci": "b" },
+    { "id": "5", "mapel": "IPS", "soal": "Proklamasi kemerdekaan Indonesia dibacakan pada tanggal …", "a": "17 Agustus 1945", "b": "20 Mei 1908", "c": "28 Oktober 1928", "d": "1 Juni 1945", "kunci": "a" },
+    { "id": "6", "mapel": "IPS", "soal": "Ibu kota Provinsi Jawa Barat adalah …", "a": "Semarang", "b": "Surabaya", "c": "Serang", "d": "Bandung", "kunci": "d" },
+    { "id": "7", "mapel": "Bahasa Indonesia", "soal": "Kata baku yang tepat adalah …", "a": "Apotik", "b": "Apotek", "c": "Apotiek", "d": "Apoteik", "kunci": "b" },
+    { "id": "8", "mapel": "Bahasa Inggris", "soal": "The past tense of \"go\" is …", "a": "Goed", "b": "Gone", "c": "Went", "d": "Going", "kunci": "c" },
+    { "id": "9", "mapel": "IPA", "soal": "Satuan SI untuk gaya adalah …", "a": "Joule", "b": "Watt", "c": "Pascal", "d": "Newton", "kunci": "d" },
+    { "id": "10", "mapel": "Matematika", "soal": "Luas persegi dengan panjang sisi 9 cm adalah …", "a": "36 cm²", "b": "81 cm²", "c": "18 cm²", "d": "72 cm²", "kunci": "b" },
+    { "id": "11", "mapel": "PPKn", "soal": "Lambang sila ketiga Pancasila adalah …", "a": "Bintang", "b": "Rantai", "c": "Pohon beringin", "d": "Kepala banteng", "kunci": "c" },
+    { "id": "12", "mapel": "IPA", "soal": "Air mendidih pada suhu … (pada tekanan 1 atm)", "a": "0 °C", "b": "50 °C", "c": "100 °C", "d": "212 °C", "kunci": "c" }
+  ]
+}

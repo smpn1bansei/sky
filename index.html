@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>Sky Cruiser Quiz — Kuis Pesawat 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body class="hal-siswa" data-layar="layar-login">
+  <canvas id="kanvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-kiri">
+      <div class="hud-kotak"><small>SOAL</small><b id="hud-soal">1/10</b></div>
+      <div class="hud-kotak"><small>BENAR</small><b id="hud-benar">0</b></div>
+    </div>
+    <div class="hud-kotak skor"><small>SKOR</small><b id="hud-skor">0</b></div>
+    <div class="hud-kanan">
+      <span class="chip-tema" id="hud-tema">Kota</span>
+      <div class="hud-kotak"><small>GERBANG</small><b id="hud-jarak">0 m</b></div>
+    </div>
+  </div>
+  <div class="tombol-pojok">
+    <button id="btn-suara" class="btn-ikon" aria-label="Suara hidup/mati" title="Suara">🔊</button>
+    <button id="btn-layar-penuh" class="btn-ikon" aria-label="Layar penuh" title="Layar penuh"></button>
+  </div>
+  <div id="banner">PILIH LINTASAN!</div>
+  <div id="peringatan-belok"></div>
+  <div id="peringatan-bahaya"></div>
+  <div id="banner-hancur" role="alert">
+    <div class="judul">PESAWAT HANCUR!</div>
+    <div class="alasan"></div>
+    <div class="catatan"></div>
+  </div>
+  <div id="popup-poin"></div>
+  <div id="joystick" aria-hidden="true"><div class="kenop"></div></div>
+
+  <!-- Modal soal -->
+  <div id="modal-soal" role="dialog" aria-modal="true">
+    <div class="kartu-soal">
+      <div class="kepala-soal">
+        <span class="nomor-soal">Soal 1 dari 10</span>
+        <span class="timer"><span class="timer-teks">30</span> dtk</span>
+      </div>
+      <div class="timer-bar"><div class="timer-isi"></div></div>
+      <p class="teks-soal"></p>
+      <img class="gambar-soal" alt="Gambar soal" hidden>
+      <div class="opsi"></div>
+      <div class="status-jawab"></div>
+      <p class="petunjuk">Klik jawaban atau tekan tombol 1–4</p>
+    </div>
+  </div>
+
+  <!-- Layar login -->
+  <section class="layar aktif" id="layar-login">
+    <div class="panel">
+      <h1 class="logo"><span class="logo-atas">SKY CRUISER</span><span class="logo-bawah">QUIZ</span></h1>
+      <p class="sub">Terbangkan pesawatmu, hindari rintangan, masuki pintu dengan tepat, dan jawab soalnya!</p>
+      <div id="info-offline" class="info" hidden>
+        <b>Mode Offline (Latihan)</b><br>
+        <small>Firebase belum diatur di <code>config.js</code>. Skor hanya disimpan di perangkat ini.</small>
+      </div>
+      <div id="info-lanjut" class="info sukses" hidden></div>
+      <form id="form-login" autocomplete="off">
+        <label>Nama Lengkap
+          <input id="in-nama" maxlength="40" required placeholder="mis. Budi Santoso">
+        </label>
+        <label>Kelas / No. Absen
+          <input id="in-kelas" maxlength="20" required placeholder="mis. 8A-12">
+        </label>
+        <label id="lbl-pin">PIN Kuis
+          <input id="in-pin" inputmode="numeric" maxlength="6" placeholder="6 digit dari guru" class="input-pin">
+        </label>
+        <div class="pilih-tema" role="group" aria-label="Pilih tema awal">
+          <span>Tema awal:</span>
+          <button type="button" data-tema="kota">🏙️ Kota</button>
+          <button type="button" data-tema="angkasa">🪐 Angkasa</button>
+          <button type="button" data-tema="gurun">🏜️ Gurun</button>
+        </div>
+        <button type="submit" class="btn utama" id="btn-masuk" disabled>Memuat game…</button>
+        <button type="button" class="btn" id="btn-lanjut-offline" hidden></button>
+        <p class="pesan-error" id="login-error" role="alert"></p>
+      </form>
+      <p class="kontrol-info">Kendali: <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> / <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · Layar sentuh: joystick kiri bawah</p>
+      <details class="cara-main">
+        <summary>Cara bermain</summary>
+        <ul>
+          <li>🛣️ Ikuti rute. Di <b>belokan tajam</b> pesawat terdorong ke luar — <b>tahan arah belokan</b> (lihat papan panah kuning).</li>
+          <li>🚧 Hindari tiang, palang, pesawat lain, UFO, dan meteor.</li>
+          <li>🚪 Masuki salah satu pintu berwarna dengan <b>tepat</b>: pintu <b>bersinar</b> artinya posisimu sudah pas.</li>
+          <li>💥 Menabrak / gagal berbelok / tidak pas di pintu = pesawat hancur dan <b>mengulang dari gerbang terakhir</b>.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <!-- Ruang tunggu -->
+  <section class="layar" id="layar-tunggu">
+    <div class="panel tengah">
+      <div class="ikon-besar">✈️</div>
+      <h2>Halo, <span id="tunggu-nama"></span>!</h2>
+      <p>Kamu sudah bergabung di kuis <b id="tunggu-judul"></b>.</p>
+      <p class="menunggu">Menunggu guru menekan <b>Mulai</b><span class="titik-titik"></span></p>
+      <p class="kecil">PIN: <b id="tunggu-pin"></b></p>
+      <button class="btn" id="btn-keluar-tunggu">Keluar</button>
+    </div>
+  </section>
+
+  <!-- Layar hasil -->
+  <section class="layar" id="layar-hasil">
+    <div class="panel tengah">
+      <h2>Hasil Akhir</h2>
+      <p id="hasil-nama" class="kecil"></p>
+      <div class="lingkar-nilai"><span id="hasil-nilai">0</span><small>NILAI</small></div>
+      <p id="hasil-pesan" class="pesan-nilai"></p>
+      <div class="statistik">
+        <div class="hijau"><b id="hasil-benar">0</b><small>Benar</small></div>
+        <div class="merah"><b id="hasil-salah">0</b><small>Salah</small></div>
+        <div><b id="hasil-kosong">0</b><small>Tidak dijawab</small></div>
+        <div class="kuning"><b id="hasil-skor">0</b><small>Skor</small></div>
+      </div>
+      <p id="hasil-catatan" class="kecil"></p>
+      <div id="hasil-riwayat" hidden>
+        <h3>Riwayat di perangkat ini</h3>
+        <table>
+          <thead><tr><th>Waktu</th><th>Nama</th><th>Benar</th><th>Nilai</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="aksi">
+        <button class="btn utama" id="btn-main-lagi">Main Lagi</button>
+        <button class="btn" id="btn-keluar">Selesai</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="kilat"></div>
+  <div id="toast"></div>
+
+  <noscript><div class="peringatan-file">Aktifkan JavaScript untuk memainkan Sky Cruiser Quiz.</div></noscript>
+  <script>
+    // ES Modules tidak bisa berjalan dari file:// — beri petunjuk yang jelas untuk guru.
+    // Jika modul game (Three.js dari CDN) gagal dimuat, beri tahu pengguna.
+    setTimeout(function () {
+      if (!window.__skyQuizSiap && location.protocol !== 'file:') {
+        document.body.insertAdjacentHTML('beforeend', '<div class="peringatan-file"><b>Game belum berhasil dimuat.</b><br>Periksa koneksi internet (game memerlukan akses ke cdn.jsdelivr.net), lalu muat ulang halaman. Gunakan browser terbaru (Chrome/Edge/Firefox).</div>');
+      }
+    }, 20000);
+    if (location.protocol === 'file:') {
+      document.addEventListener('DOMContentLoaded', function () {
+        document.body.insertAdjacentHTML('beforeend', '<div class="peringatan-file"><b>Game harus dibuka lewat server/hosting.</b><br>Unggah folder ini ke Netlify / GitHub Pages / Firebase Hosting, atau jalankan server lokal (mis. ekstensi "Live Server" di VS Code). Lihat README.md.</div>');
+      });
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

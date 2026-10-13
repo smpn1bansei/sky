@@ -1,0 +1,142 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "guru": {
+      ".read": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true",
+      "$email": {
+        ".read": "auth != null && auth.token.email != null && auth.token.email.toLowerCase().replace('.', ',') === $email",
+        ".write": "(auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true && auth.token.email.toLowerCase().replace('.', ',') !== $email) || (auth != null && auth.token.email != null && auth.token.email.toLowerCase().replace('.', ',') === $email && !root.child('guru').exists())",
+        ".validate": "newData.val() === true"
+      }
+    },
+    "paket": {
+      ".read": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true",
+      ".write": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true"
+    },
+    "soal": {
+      ".read": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true",
+      ".write": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true",
+      "$paketId": {
+        ".read": "auth != null"
+      }
+    },
+    "kunci": {
+      ".read": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true",
+      ".write": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true",
+      "$paketId": {
+        "$soalId": {
+          ".validate": "newData.isString() && newData.val().matches(/^[abcd]$/)"
+        }
+      }
+    },
+    "daftarRoom": {
+      ".read": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true",
+      ".write": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true"
+    },
+    "rooms": {
+      "$pin": {
+        ".read": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true",
+        ".write": "auth != null && auth.token.email != null && root.child('guru').child(auth.token.email.toLowerCase().replace('.', ',')).val() === true",
+        "info": {
+          ".read": "auth != null",
+          ".validate": "newData.hasChildren(['paketId', 'jumlahSoal', 'waktuPerSoal', 'mode', 'status'])",
+          "status": {
+            ".validate": "newData.val() === 'menunggu' || newData.val() === 'berjalan' || newData.val() === 'selesai'"
+          }
+        },
+        "namaIndex": {
+          "$kunci": {
+            ".write": "auth != null && newData.val() === auth.uid && (!data.exists() || data.val() === auth.uid) && root.child('rooms').child($pin).child('info/status').exists() && root.child('rooms').child($pin).child('info/status').val() !== 'selesai'"
+          }
+        },
+        "siswa": {
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid",
+            "nama": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists()",
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40"
+            },
+            "kelas": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists()",
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+            },
+            "kunciNama": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists()",
+              ".validate": "newData.isString() && root.child('rooms').child($pin).child('namaIndex').child(newData.val()).val() === auth.uid"
+            },
+            "urutan": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists()",
+              "$sid": {
+                ".validate": "newData.isNumber() && root.child('soal').child(root.child('rooms').child($pin).child('info/paketId').val()).child($sid).exists()"
+              }
+            },
+            "soalKe": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
+            },
+            "benar": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
+            },
+            "salah": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
+            },
+            "skor": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+            },
+            "nilai": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "status": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.val() === 'menunggu' || newData.val() === 'bermain' || newData.val() === 'selesai'"
+            },
+            "online": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isBoolean()"
+            },
+            "bergabung": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists()",
+              ".validate": "newData.isNumber()"
+            },
+            "terakhirAktif": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isNumber()"
+            },
+            "$lain": {
+              ".validate": false
+            }
+          }
+        },
+        "jawaban": {
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid",
+            "$soalId": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists() && root.child('rooms').child($pin).child('info/status').val() === 'berjalan' && root.child('rooms').child($pin).child('siswa').child($uid).child('urutan').child($soalId).exists()",
+              ".validate": "newData.hasChildren(['pilihan', 'benar', 'waktu']) && newData.child('benar').val() === (newData.child('pilihan').val() === root.child('kunci').child(root.child('rooms').child($pin).child('info/paketId').val()).child($soalId).val())",
+              "pilihan": {
+                ".validate": "newData.isString() && newData.val().matches(/^[abcd-]$/)"
+              },
+              "benar": {
+                ".validate": "newData.isBoolean()"
+              },
+              "waktu": {
+                ".validate": "newData.val() === now"
+              },
+              "durasi": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              "$lain": {
+                ".validate": false
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

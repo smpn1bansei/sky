@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel Guru — Sky Cruiser Quiz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="hal-admin">
+
+  <!-- Login guru -->
+  <div id="layar-login-guru" class="layar-login-guru">
+    <div class="tombol-pojok"><button class="btn-ikon btn-layar-penuh" type="button"></button></div>
+    <div class="kartu">
+      <h1>SKY CRUISER <span>QUIZ</span></h1>
+      <p class="redup" style="text-align:center;margin-top:0">Panel Guru</p>
+      <div id="pesan-belum-config" class="pesan error" hidden>
+        <b>Firebase belum diatur.</b> Isi file <code>config.js</code> dengan konfigurasi proyek Firebase Anda (lihat README.md).
+        Tanpa Firebase, siswa tetap bisa bermain dalam mode latihan offline.
+      </div>
+      <form id="form-login-guru" style="display:flex;flex-direction:column;gap:10px" onsubmit="return false">
+        <label class="f">Email <input type="email" id="g-email" required autocomplete="username"></label>
+        <label class="f">Kata sandi <input type="password" id="g-sandi" required minlength="6" autocomplete="current-password"></label>
+        <div id="g-pesan"></div>
+        <button class="b utama" type="submit" id="g-masuk" disabled>Memuat…</button>
+        <button class="b" type="button" id="g-daftar" disabled>Buat akun guru baru</button>
+        <button class="b teks" type="button" id="g-lupa">Lupa kata sandi?</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Akun belum terdaftar sebagai guru -->
+  <div id="layar-bukan-guru" class="layar-login-guru" hidden>
+    <div class="kartu">
+      <h1>SKY CRUISER <span>QUIZ</span></h1>
+      <div class="pesan info">
+        Akun <b id="bukan-guru-email"></b> berhasil masuk, tetapi <b>belum terdaftar sebagai guru</b>.<br><br>
+        Minta guru pengelola menambahkan email Anda di menu <b>Akun Guru</b>, lalu muat ulang halaman ini.
+      </div>
+      <div class="baris">
+        <button class="b utama" onclick="location.reload()">Muat ulang</button>
+        <button class="b" id="btn-logout-2">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aplikasi -->
+  <div id="aplikasi" hidden>
+    <header class="a-header">
+      <h1>SKY CRUISER <span>QUIZ</span></h1>
+      <span style="color:#94a3b8">Panel Guru</span>
+      <span class="ruang"></span>
+      <span class="email" id="a-email"></span>
+      <a class="b kecil" href="index.html" target="_blank" rel="noopener">Halaman siswa ↗</a>
+      <button class="b kecil" id="btn-logout">Keluar</button>
+      <button class="btn-ikon btn-layar-penuh" type="button"></button>
+    </header>
+    <nav class="tab">
+      <button data-tab="room" class="aktif">Room &amp; Pantau Live</button>
+      <button data-tab="bank">Bank Soal</button>
+      <button data-tab="guru">Akun Guru</button>
+    </nav>
+
+    <main>
+      <!-- ================= TAB ROOM ================= -->
+      <section id="tab-room">
+        <div class="kartu" id="kartu-pantau" hidden>
+          <div class="baris">
+            <div class="lebar">
+              <div class="redup">Room: <b id="p-judul"></b> · Paket: <span id="p-paket"></span> · <span id="p-pengaturan"></span></div>
+              <div class="baris" style="margin-top:6px">
+                <span class="pin-besar" id="p-pin">000000</span>
+                <span class="lencana" id="p-status">menunggu</span>
+              </div>
+              <div class="redup" style="margin-top:6px">
+                Siswa membuka: <a id="p-link" target="_blank" rel="noopener"></a>
+                <button class="b kecil" id="p-salin">Salin tautan</button>
+              </div>
+            </div>
+            <div class="baris kanan">
+              <button class="b hijau" id="p-mulai">▶ Mulai</button>
+              <button class="b merah" id="p-akhiri">■ Akhiri</button>
+              <button class="b" id="p-xlsx">⬇ Excel</button>
+              <button class="b" id="p-csv">⬇ CSV</button>
+              <button class="b" id="p-tutup">Tutup</button>
+            </div>
+          </div>
+          <div class="ringkas" style="margin:14px 0">
+            <div><b id="r-siswa">0</b><small>Siswa</small></div>
+            <div><b id="r-online">0</b><small>Online</small></div>
+            <div><b id="r-selesai">0</b><small>Selesai</small></div>
+            <div><b id="r-rata">0</b><small>Rata-rata nilai</small></div>
+          </div>
+          <div class="gulir">
+            <table class="t">
+              <thead><tr>
+                <th>#</th><th>Nama</th><th>Kelas</th><th>Soal ke-</th><th>Benar</th><th>Salah</th>
+                <th>Skor</th><th>Nilai</th><th>Status</th><th></th>
+              </tr></thead>
+              <tbody id="p-tabel"></tbody>
+            </table>
+          </div>
+          <p class="redup" style="margin-bottom:0">Tabel diperbarui otomatis (realtime). Benar/salah dihitung dari jawaban yang sudah diverifikasi server.
+            Tombol <b>Reset</b> menghapus data siswa itu agar ia bisa masuk ulang (mis. ganti perangkat).</p>
+        </div>
+
+        <div class="grid2">
+          <div class="kartu">
+            <h2>Buat Room Baru</h2>
+            <form id="form-room" style="display:flex;flex-direction:column;gap:10px">
+              <label class="f">Judul kuis <input id="rm-judul" required maxlength="60" placeholder="mis. Sumatif IPA Kelas 8 - Bab 3"></label>
+              <label class="f">Paket soal <select id="rm-paket" required></select></label>
+              <div class="grid2">
+                <label class="f">Jumlah soal ditampilkan <input id="rm-jumlah" type="number" min="1" value="10" required>
+                  <small class="redup" id="rm-jumlah-info"></small></label>
+                <label class="f">Waktu per soal (detik) <input id="rm-waktu" type="number" min="5" max="600" value="30" required></label>
+              </div>
+              <label class="f">Tingkat kesulitan rute terbang
+                <select id="rm-kesulitan">
+                  <option value="mudah">Mudah — belokan landai, 3 rintangan per soal</option>
+                  <option value="sedang" selected>Sedang — belokan tajam, 5 rintangan per soal</option>
+                  <option value="sulit">Sulit — 2 belokan sangat tajam, 7 rintangan per soal</option>
+                </select>
+              </label>
+              <label class="cek"><input type="checkbox" id="rm-acak-soal" checked> Acak urutan soal (tiap siswa berbeda)</label>
+              <label class="cek"><input type="checkbox" id="rm-acak-opsi" checked> Acak urutan pilihan jawaban</label>
+              <label class="f">Mode
+                <select id="rm-mode">
+                  <option value="pin">PIN Kuis — siswa menunggu sampai guru menekan "Mulai"</option>
+                  <option value="langsung">Langsung — siswa bisa langsung bermain setelah memasukkan PIN</option>
+                </select>
+              </label>
+              <button class="b utama" type="submit">Buat Room &amp; PIN</button>
+            </form>
+          </div>
+          <div class="kartu">
+            <h2>Daftar Room</h2>
+            <div class="gulir" style="max-height:420px">
+              <table class="t">
+                <thead><tr><th>PIN</th><th>Judul</th><th>Dibuat</th><th></th></tr></thead>
+                <tbody id="daftar-room"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB BANK SOAL ================= -->
+      <section id="tab-bank" hidden>
+        <div class="grid-bank">
+          <div class="kartu">
+            <div class="baris" style="justify-content:space-between;margin-bottom:10px">
+              <h2 style="margin:0">Paket Soal</h2>
+              <button class="b utama kecil" id="btn-paket-baru">+ Paket</button>
+            </div>
+            <ul class="daftar-paket" id="daftar-paket"></ul>
+          </div>
+          <div class="kartu" id="detail-paket">
+            <p class="kosong">Pilih atau buat paket soal terlebih dahulu.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB GURU ================= -->
+      <section id="tab-guru" hidden>
+        <div class="kartu" style="max-width:640px">
+          <h2>Akun Guru</h2>
+          <p class="redup">Hanya email di daftar ini yang boleh mengelola bank soal &amp; room.
+            Guru baru: buat akun di halaman login, lalu tambahkan emailnya di sini.</p>
+          <form id="form-guru" class="baris">
+            <input type="email" id="guru-email" class="lebar" placeholder="email.guru@sekolah.sch.id" required>
+            <button class="b utama" type="submit">Tambah</button>
+          </form>
+          <table class="t" style="margin-top:12px"><tbody id="daftar-guru"></tbody></table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Dialog paket -->
+  <dialog id="dlg-paket">
+    <form method="dialog" id="form-paket">
+      <h2 id="dlg-paket-judul">Paket Soal Baru</h2>
+      <label class="f">Nama paket <input id="pk-nama" required maxlength="60" placeholder="mis. IPA Kelas 8 - Bab Sistem Pernapasan"></label>
+      <label class="f">Mata pelajaran <input id="pk-mapel" maxlength="40" placeholder="mis. IPA"></label>
+      <div class="baris kanan">
+        <button class="b" value="batal" formnovalidate>Batal</button>
+        <button class="b utama" value="simpan">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Dialog soal -->
+  <dialog id="dlg-soal">
+    <form method="dialog" id="form-soal">
+      <h2 id="dlg-soal-judul">Tambah Soal</h2>
+      <label class="f">Pertanyaan <textarea id="s-soal" required maxlength="1000"></textarea></label>
+      <div class="opsi-form">
+        <b>A</b><input id="s-a" required maxlength="300">
+        <b>B</b><input id="s-b" required maxlength="300">
+        <b>C</b><input id="s-c" required maxlength="300">
+        <b>D</b><input id="s-d" required maxlength="300">
+      </div>
+      <div class="grid2">
+        <label class="f">Kunci jawaban
+          <select id="s-kunci" required>
+            <option value="a">A</option><option value="b">B</option><option value="c">C</option><option value="d">D</option>
+          </select>
+        </label>
+        <label class="f">Mata pelajaran (opsional) <input id="s-mapel" maxlength="40"></label>
+      </div>
+      <label class="f">URL gambar (opsional)
+        <input id="s-gambar" maxlength="500" placeholder="https://… atau assets/gambar/nama.png">
+      </label>
+      <div class="baris kanan">
+        <button class="b" value="batal" formnovalidate>Batal</button>
+        <button class="b utama" value="simpan">Simpan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Dialog impor -->
+  <dialog id="dlg-impor">
+    <form method="dialog" id="form-impor">
+      <h2>Impor Soal dari CSV / Excel</h2>
+      <p class="redup" style="margin:0">Kolom wajib: <b>soal, a, b, c, d, kunci</b> (kunci diisi A/B/C/D). Kolom opsional: <b>mapel, gambar</b>.
+        Baris pertama harus berisi nama kolom. <a href="#" id="unduh-template">Unduh template CSV</a></p>
+      <input type="file" id="impor-file" accept=".csv,.xlsx,.xls,.ods">
+      <div id="impor-hasil"></div>
+      <div class="baris kanan">
+        <button class="b" value="batal" formnovalidate>Batal</button>
+        <button class="b utama" value="impor" id="impor-ok" disabled>Impor</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast"></div>
+  <script>
+    if (location.protocol === 'file:') {
+      document.addEventListener('DOMContentLoaded', function () {
+        document.body.insertAdjacentHTML('afterbegin', '<div class="peringatan-file"><b>Panel guru harus dibuka lewat server/hosting</b> (bukan klik dua kali file). Lihat README.md.</div>');
+      });
+    }
+  </script>
+  <script type="module" src="js/admin/admin.js"></script>
+</body>
+</html>
