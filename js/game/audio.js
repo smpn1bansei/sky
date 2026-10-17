@@ -57,12 +57,6 @@ export const suara = {
     nada(660, 0, 0.09, { tipe: 'square', volume: 0.06 });
     nada(660, 0.14, 0.09, { tipe: 'square', volume: 0.06 });
   },
-  /** Denting cincin: nadanya makin tinggi saat rantai bertambah */
-  cincin(rantai = 1) {
-    const f = 880 * Math.pow(1.12, Math.min(8, rantai - 1));
-    nada(f, 0, 0.12, { tipe: 'triangle', volume: 0.12 });
-    nada(f * 1.5, 0.06, 0.14, { tipe: 'sine', volume: 0.08 });
-  },
   muncul() {
     nada(440, 0, 0.12, { tipe: 'triangle', volume: 0.12 });
     nada(660, 0.1, 0.18, { tipe: 'triangle', volume: 0.12 });

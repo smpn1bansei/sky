@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { buatPesawatBawaan } from './pesawat.js';
 
 // =====================================================================
 //  TEMA & DUNIA DI SEPANJANG RUTE
@@ -6,8 +7,8 @@ import * as THREE from 'three';
 //  didaur ulang ke depan → jumlah objek tetap sedikit (ringan untuk Chromebook).
 // =====================================================================
 
-export const DAFTAR_TEMA = ['kota', 'angkasa', 'gurun'];
-export const NAMA_TEMA = { kota: 'Kota', angkasa: 'Angkasa', gurun: 'Gurun' };
+export const DAFTAR_TEMA = ['kota', 'langit', 'gurun'];
+export const NAMA_TEMA = { kota: 'Kota', langit: 'Langit', gurun: 'Gurun' };
 
 const PANJANG_DEK = 760;   // rentang dekorasi di sekitar pesawat
 const BELAKANG = 60;       // dekorasi sejauh ini di belakang pesawat dipindah ke depan
@@ -21,9 +22,9 @@ const DEFINISI = {
     hemiAtas: 0xffffff, hemiBawah: 0x5b6b7a, hemiKuat: 1.5, matahari: 0xfff2d6, matahariKuat: 1.8,
     warnaTanah: 0x6f8f5a
   },
-  angkasa: {
-    langitAtas: 0x02010a, langitBawah: 0x0a0620, kabut: 0x05030f, kabutDekat: 140, kabutJauh: 560,
-    hemiAtas: 0xc7bfff, hemiBawah: 0x241a4a, hemiKuat: 1.5, matahari: 0xffffff, matahariKuat: 1.7
+  langit: {
+    langitAtas: 0x1f8ef1, langitBawah: 0xc4e6ff, kabut: 0xc9e7ff, kabutDekat: 180, kabutJauh: 720,
+    hemiAtas: 0xffffff, hemiBawah: 0xa9cdef, hemiKuat: 1.9, matahari: 0xfffaf0, matahariKuat: 1.6
   },
   gurun: {
     langitAtas: 0xe9773f, langitBawah: 0xffdca3, kabut: 0xffd9a0, kabutDekat: 90, kabutJauh: 460,
@@ -83,7 +84,7 @@ export class Lintasan {
     this.matPita = null;
     this.scene.add(this.grup);
 
-    if (nama === 'angkasa') bangunAngkasa(this);
+    if (nama === 'langit') bangunLangit(this);
     else if (nama === 'gurun') bangunGurun(this, def);
     else bangunKota(this, def);
 
@@ -131,7 +132,7 @@ export class Lintasan {
     if (this.tanah) {
       rute.posisi(sP, 0, 0, V);
       const u = this.tanah.userData.ubin;
-      this.tanah.position.set(Math.round(V.x / u) * u, 0, Math.round(V.z / u) * u);
+      this.tanah.position.set(Math.round(V.x / u) * u, this.tanah.userData.y || 0, Math.round(V.z / u) * u);
     }
     this.updatePita(sP);
     this.updateChevron(sP);
@@ -388,59 +389,74 @@ function bangunKota(L, def) {
 }
 
 // ---------------------------------------------------------------------
-//  TEMA ANGKASA — tanpa lantai: ruang angkasa lepas berbintang ke segala arah
+//  TEMA LANGIT — di atas awan, terang & cerah. Rutenya lurus (lihat rute.js),
+//  tantangannya pesawat-pesawat yang lewat.
 // ---------------------------------------------------------------------
-function bangunAngkasa(L) {
-  // Bintang di bola raksasa mengelilingi kamera (atas, samping, dan bawah)
-  const n = 2200;
-  const pos = new Float32Array(n * 3);
-  const col = new Float32Array(n * 3);
-  const c = new THREE.Color();
-  for (let i = 0; i < n; i++) {
-    const v = new THREE.Vector3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1).normalize()
-      .multiplyScalar(380 + Math.random() * 280);
-    pos.set([v.x, v.y, v.z], i * 3);
-    c.setHSL(Math.random() < 0.8 ? 0.6 : Math.random(), 0.4, 0.75 + Math.random() * 0.25);
-    col.set([c.r, c.g, c.b], i * 3);
-  }
-  const geoBintang = new THREE.BufferGeometry();
-  geoBintang.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geoBintang.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  const bintang = new THREE.Points(geoBintang, new THREE.PointsMaterial({ size: 1.8, vertexColors: true, fog: false, depthWrite: false }));
-  L.grup.add(bintang);
-  L.ikutKamera.push({ obj: bintang, offset: new THREE.Vector3() });
+function bangunLangit(L) {
+  // Lautan awan jauh di bawah pesawat
+  const lautAwan = new THREE.MeshLambertMaterial({
+    map: teksturKanvas(256, 256, (g, w, h) => {
+      g.fillStyle = '#d6eaff'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 70; i++) {
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        const r = 12 + Math.random() * 34;
+        const gr = g.createRadialGradient(x, y, 0, x, y, r);
+        gr.addColorStop(0, Math.random() < 0.5 ? 'rgba(255,255,255,0.95)' : 'rgba(205,224,245,0.6)');
+        gr.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = gr;
+        for (const dx of [-w, 0, w]) for (const dy of [-h, 0, h]) { g.save(); g.translate(dx, dy); g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); g.restore(); }
+      }
+    }, 30, 30),
+    emissive: 0x5a6f8a
+  });
+  buatTanah(L, lautAwan);
+  L.tanah.userData.y = -34;
 
-  // Planet
-  const warnaPlanet = [0xff6b6b, 0x4ecdc4, 0xffd166, 0x9b5de5, 0x00bbf9, 0xf15bb5];
-  for (let i = 0; i < 7; i++) {
-    const g = new THREE.Group();
-    const r = antara(8, 24);
-    const pl = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), lambert(warnaPlanet[i % warnaPlanet.length], { emissive: 0x111122 }));
-    pl.userData = { vx: 0, vy: antara(0.1, 0.3) };
-    g.add(pl);
-    if (i % 2 === 0) {
-      const cincin = new THREE.Mesh(new THREE.TorusGeometry(r * 1.6, r * 0.12, 3, 24), lambert(0xf2e9e4));
-      cincin.rotation.x = Math.PI / 2.3;
-      g.add(cincin);
+  // Matahari cerah
+  const mthr = new THREE.Mesh(new THREE.CircleGeometry(46, 24), new THREE.MeshBasicMaterial({ color: 0xfffbe6, fog: false }));
+  const halo = new THREE.Mesh(new THREE.CircleGeometry(95, 24), new THREE.MeshBasicMaterial({ color: 0xfff4c2, transparent: true, opacity: 0.35, fog: false, depthWrite: false }));
+  const offset = new THREE.Vector3(-260, 230, -600);
+  for (const m of [halo, mthr]) {
+    m.lookAt(offset.clone().negate());
+    L.grup.add(m);
+    L.ikutKamera.push({ obj: m, offset });
+  }
+
+  // Gumpalan awan: di samping, di atas, dan di bawah jalur (tidak menutupi jalur terbang)
+  const geoAwan = new THREE.IcosahedronGeometry(1, 1);
+  const matAwan = [lambert(0xffffff, { emissive: 0x8a9bb0 }), lambert(0xf3f8ff, { emissive: 0x7d8ea6 })];
+  const buatAwan = (i, besar) => {
+    const a = new THREE.Group();
+    const n = 3 + Math.floor(Math.random() * 3);
+    for (let k = 0; k < n; k++) {
+      const m = new THREE.Mesh(geoAwan, matAwan[(i + k) % 2]);
+      const r = besar * antara(0.6, 1.1);
+      m.scale.set(r * antara(1.1, 1.6), r * antara(0.6, 0.85), r);
+      m.position.set((k - n / 2) * besar * 0.95, Math.random() * besar * 0.35, (Math.random() - 0.5) * besar);
+      a.add(m);
     }
-    L.putar.push(pl);
-    dek(L, g, { latMin: 90, latMax: 200, y: antara(-60, 110), aman: 16 + r * 1.7, i, rotY: 0 });
+    return a;
+  };
+  for (let i = 0; i < 26; i++) {           // samping jalur
+    const besar = antara(4, 8);
+    dek(L, buatAwan(i, besar), { latMin: 22, latMax: 90, y: antara(-6, 18), aman: 16 + besar * 2.4, i });
+  }
+  for (let i = 0; i < 16; i++) {           // di bawah jalur
+    dek(L, buatAwan(i, antara(6, 11)), { latMin: 0, latMax: 70, y: antara(-26, -12), i });
+  }
+  for (let i = 0; i < 12; i++) {           // tinggi di atas
+    dek(L, buatAwan(i, antara(7, 12)), { latMin: 0, latMax: 110, y: antara(34, 60), i });
   }
 
-  // Asteroid hiasan di luar jalur (juga di bawah, karena tidak ada lantai)
-  const geoAst = new THREE.DodecahedronGeometry(1, 0);
-  const matAst = [lambert(0x8d8d99), lambert(0x6c5f5b), lambert(0xa89f91)];
-  for (let i = 0; i < 40; i++) {
-    const a = new THREE.Mesh(geoAst, matAst[i % 3]);
-    const r = antara(1, 4.5);
-    a.scale.setScalar(r);
-    a.userData = { vx: antara(-1, 1), vy: antara(-1, 1) };
-    L.putar.push(a);
-    dek(L, a, { latMin: 18, latMax: 75, y: antara(-45, 40), aman: 15 + r, i });
+  // Pesawat-pesawat kecil di kejauhan (hiasan) supaya langit terasa ramai
+  const warna = [0xef4444, 0x2563eb, 0x16a34a, 0xf59e0b];
+  for (let i = 0; i < 6; i++) {
+    const p = buatPesawatBawaan(warna[i % warna.length], 0xffffff);
+    p.scale.setScalar(antara(1.2, 2));
+    dek(L, p, { latMin: 60, latMax: 140, y: antara(14, 40), aman: 40, i, rotY: (Math.random() < 0.5 ? 1 : -1) * antara(0.4, 2.6) });
   }
-
-  // Tanpa penanda tepi: pemandangan angkasa dibiarkan lepas.
-  // Bila pesawat terlalu melebar, pesawat hanya tertahan (mentok) di batas jalur.
+  // Tanpa jalan & penanda tepi: bila terlalu melebar, pesawat hanya tertahan di batas jalur.
 }
 
 // ---------------------------------------------------------------------

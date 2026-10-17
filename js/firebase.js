@@ -96,7 +96,7 @@ export async function masukSiswa({ pin, nama, kelas }) {
     const terpilih = (info.acakSoal ? kocok(ids, rng) : ids).slice(0, Math.min(info.jumlahSoal, ids.length));
     siswa = {
       nama, kelas, pemilik: uid,
-      soalKe: 0, benar: 0, salah: 0, skor: 0, nilai: 0, tabrakan: 0, cincin: 0, fokus: 0,
+      soalKe: 0, benar: 0, salah: 0, skor: 0, nilai: 0, tabrakan: 0,
       status: info.status === 'berjalan' ? 'bermain' : 'menunggu',
       online: true,
       bergabung: D.serverTimestamp(),

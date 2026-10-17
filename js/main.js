@@ -3,6 +3,7 @@
 // =====================================================================
 import { firebaseSiap, pengaturanGame } from '../config.js';
 import { Game } from './game/game.js';
+import { DAFTAR_TEMA } from './game/tema.js';
 import { PINTU } from './game/portal.js';
 import { aktifkanAudio, suara, setSenyap, isSenyap } from './game/audio.js';
 import { HUD } from './ui/hud.js';
@@ -26,10 +27,10 @@ let sesi = null;
 let sedangMain = false;
 let sedangMenjawab = false;
 
-game.on('banner', (v, tantangan) => hud.setBanner(v, tantangan));
+game.on('banner', (v) => hud.setBanner(v));
 game.on('kilat', () => kilat());
 game.on('tema', (n) => hud.setTema(n));
-game.on('pintu', (i, tantangan) => prosesPintu(i, tantangan));
+game.on('pintu', (i) => prosesPintu(i));
 game.on('jarak', (sisa, total) => hud.setProgres(sisa, total));
 // Peringatan tampil sekali saja selama 4/3/2 detik (mudah/sedang/sulit)
 game.on('peringatan', (jenis, teks, durasi) => {
@@ -41,15 +42,6 @@ game.on('hitung', (n) => {
   if (n > 0) suara.tik(); else suara.mulai();
 });
 game.on('mentok', (sisi) => hud.mentok(sisi));
-game.on('cincin', (rantai) => {
-  if (!sesi) return;
-  const poin = sesi.catatCincin(rantai);
-  suara.cincin(rantai);
-  hud.setCincin(sesi.stat.cincin);
-  hud.tampilkanPoinKecil(rantai >= 2 ? `★ +${poin}  ×${Math.min(5, rantai)}` : `★ +${poin}`);
-  hud.animasiSkor(sesi.skor);
-});
-game.on('cincinLewat', () => hud.tampilkanPoinKecil('★ terlewat', 'lewat'));
 game.on('hancur', (alasan, ke) => {
   suara.ledakan();
   sesi?.catatTabrakan();
@@ -64,6 +56,7 @@ pasangTombolLayarPenuh($('btn-layar-penuh'));
 
 // ---------- Pilihan tema awal
 let temaPilihan = bacaLokal('sq_tema', 'kota');
+if (!DAFTAR_TEMA.includes(temaPilihan)) temaPilihan = 'kota'; // mis. tema lama "angkasa"
 game.setTema(temaPilihan);
 document.querySelectorAll('.pilih-tema button').forEach((b) => {
   b.classList.toggle('aktif', b.dataset.tema === temaPilihan);
@@ -217,27 +210,15 @@ function mulaiMain() {
   game.mulai({ kesulitan: sesi.kesulitan || pengaturanGame.kesulitan });
 }
 
-const NAMA_WARNA = ['MERAH', 'BIRU', 'KUNING', 'HIJAU'];
-
-async function prosesPintu(i, tantangan) {
+async function prosesPintu(i) {
   if (!sedangMain || sedangMenjawab) return;
   sedangMenjawab = true;
   suara.pintu();
-  // Tantangan fokus (Stroop): pintu sesuai KATA warna → bonus
-  let catatanFokus = null;
-  if (tantangan) {
-    const tepat = i === tantangan.kata;
-    const bonus = sesi.catatFokus(tepat);
-    catatanFokus = tepat
-      ? { teks: `🎯 Fokus! Pintu ${NAMA_WARNA[i]} tepat · +${bonus}`, baik: true }
-      : { teks: `🎯 Tantangan fokus: seharusnya pintu ${NAMA_WARNA[tantangan.kata]}`, baik: false };
-    hud.animasiSkor(sesi.skor);
-  }
   const soal = sesi.soalSekarang;
   const sisa = sesi.mulaiSoal(soal.id);
   const h = await modal.tampilkan({
     nomor: sesi.indeks + 1, total: sesi.total, teks: soal.teks, gambar: soal.gambar,
-    opsi: soal.opsi, waktu: sesi.waktuPerSoal, sisa, warna: PINTU[i].css, catatan: catatanFokus
+    opsi: soal.opsi, waktu: sesi.waktuPerSoal, sisa, warna: PINTU[i].css
   });
 
   let benar = false;

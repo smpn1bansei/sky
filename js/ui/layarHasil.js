@@ -7,17 +7,6 @@ function pesanNilai(n) {
   return 'Jangan menyerah, ayo belajar lagi!';
 }
 
-/** Ringkasan konsentrasi: gabungan tantangan fokus, cincin, dan tabrakan. */
-function ratingFokus(st, dijawab) {
-  const fokus = dijawab ? (st.fokus || 0) / dijawab : 0;
-  const tabrakanPerSoal = dijawab ? (st.tabrakan || 0) / dijawab : 0;
-  const skor = fokus * 0.6 + Math.max(0, 1 - tabrakanPerSoal) * 0.4;
-  if (skor >= 0.85) return '🧠 Konsentrasi: Sangat fokus!';
-  if (skor >= 0.6) return '🧠 Konsentrasi: Fokus baik';
-  if (skor >= 0.35) return '🧠 Konsentrasi: Cukup — perhatikan kata warna di pintu';
-  return '🧠 Konsentrasi: Ayo latih fokusmu lagi!';
-}
-
 /** Mengisi layar hasil akhir. */
 export function isiLayarHasil(sesi, { offline, catatan = '' }) {
   const n = sesi.nilai;
@@ -30,12 +19,8 @@ export function isiLayarHasil(sesi, { offline, catatan = '' }) {
   document.getElementById('hasil-skor').textContent = sesi.skor.toLocaleString('id-ID');
   document.getElementById('hasil-catatan').textContent = catatan;
   const st = sesi.stat || {};
-  const dijawab = sesi.benar + sesi.salah;
-  document.getElementById('hasil-cincin').textContent = st.cincin || 0;
-  document.getElementById('hasil-fokus').textContent = `${st.fokus || 0}/${dijawab}`;
   document.getElementById('hasil-combo').textContent = st.comboTerbaik || 0;
   document.getElementById('hasil-tabrakan').textContent = st.tabrakan || 0;
-  document.getElementById('hasil-rating').textContent = ratingFokus(st, dijawab);
   document.querySelector('.lingkar-nilai').style.setProperty('--persen', n);
 
   document.getElementById('btn-main-lagi').hidden = !offline;

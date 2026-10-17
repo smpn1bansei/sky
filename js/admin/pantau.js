@@ -29,7 +29,7 @@ export function hitungBaris(room) {
     const total = ids.length || info.jumlahSoal || 1;
     return {
       sid, nama: s.nama || '?', kelas: s.kelas || '',
-      tabrakan: s.tabrakan || 0, cincin: s.cincin || 0, fokus: s.fokus || 0,
+      tabrakan: s.tabrakan || 0,
       bergabung: s.bergabung, terakhirAktif: s.terakhirAktif,
       total, dijawab, benar, salah: dijawab - benar, skor: s.skor || 0,
       nilai: Math.round((benar / total) * 100),
@@ -108,7 +108,7 @@ export function initPantau(fb) {
         <td style="color:#b91c1c">${b.salah}</td>
         <td>${b.skor.toLocaleString('id-ID')}</td>
         <td><b>${b.nilai}</b></td>
-        <td title="Tabrakan · cincin · tantangan fokus benar">💥${b.tabrakan} ★${b.cincin} 🎯${b.fokus}</td>
+        <td>💥 ${b.tabrakan}</td>
         <td>${status}</td>
         <td><button class="b kecil" data-aksi="reset" title="Hapus data siswa ini agar bisa masuk ulang">Reset</button></td>
       </tr>`;
@@ -180,7 +180,7 @@ Semua jawaban siswa ini di room ini akan dihapus, lalu nama ini bisa dipakai mas
       Peringkat: i + 1, Nama: b.nama, Kelas: b.kelas,
       Benar: b.benar, Salah: b.salah, 'Tidak Dijawab': b.total - b.dijawab, 'Jumlah Soal': b.total,
       Nilai: b.nilai, 'Skor Game': b.skor, Status: b.selesai ? 'Selesai' : 'Belum selesai',
-      Tabrakan: b.tabrakan, 'Cincin Bintang': b.cincin, 'Tantangan Fokus Benar': b.fokus,
+      Tabrakan: b.tabrakan,
       'Waktu Masuk': formatTanggal(b.bergabung), 'Terakhir Aktif': formatTanggal(b.terakhirAktif)
     }));
     X.utils.book_append_sheet(wb, X.utils.json_to_sheet(rekap.length ? rekap : [{ Keterangan: 'Belum ada siswa' }]), 'Rekap Nilai');

@@ -8,7 +8,6 @@ import { Kontrol } from './kontrol.js';
 import { Efek } from './efek.js';
 import { Rute, KESULITAN } from './rute.js';
 import { buatRintanganBlok } from './rintangan.js';
-import { buatCincinBlok } from './cincin.js';
 
 // Koordinat pesawat memakai koordinat RUTE: s (jarak maju), x (geser kanan +), y (tinggi).
 const BATAS_X = 11;          // batas samping: pesawat tertahan (mentok), tidak hancur
@@ -18,7 +17,7 @@ const Y_MAX = 11.2;
 const KEC_SAMPING = 15;
 const KEC_VERTIKAL = 12;
 const GAYA_BELOK = 0.9;      // kekuatan "terlempar" ke sisi luar tikungan
-const JARAK_BANNER = 170;    // banner tantangan pintu muncul
+const JARAK_BANNER = 170;    // banner gerbang muncul
 const JARAK_SINAR = 220;     // pintu mulai bersinar bila posisi pesawat pas
 const LAMA_HANCUR = 1.9;     // detik animasi hancur sebelum muncul ulang
 const LAMA_KEBAL = 1.2;      // detik kebal setelah hitung mundur selesai
@@ -26,7 +25,7 @@ const HITUNG_AWAL = 3;       // hitung mundur di awal perjalanan
 const HITUNG_ULANG = 2;      // hitung mundur setelah muncul di checkpoint
 const BATAS_BANTUAN = 3;     // setelah 3x hancur di blok yang sama → rintangan blok itu dihapus
 
-const LABEL_RINTANGAN = { tiang: 'tiang', palang: 'palang', pesawat: 'pesawat lain', ufo: 'UFO', meteor: 'meteor', batu: 'asteroid' };
+const LABEL_RINTANGAN = { tiang: 'tiang', palang: 'palang', pesawat: 'pesawat lain', meteor: 'meteor' };
 const V = new THREE.Vector3();
 
 /**
@@ -64,17 +63,15 @@ export class Game {
     this.portal = null;
     this.portalLama = [];
     this.rintangan = [];
-    this.cincin = [];
     this.kBlok = 0;
     this.sCheckpoint = 0;
     this.tabrakanBlok = 0;
     this.bantuan = false;
     this.bannerTampil = false;
     this.belokDiperingatkan = new Set();
-    this.tantangan = null;
-    this.stat = { tabrakan: 0, cincin: 0, cincinTotal: 0, rantaiCincin: 0, rantaiTerbaik: 0 };
+    this.stat = { tabrakan: 0 };
     this.cb = {};
-    for (const n of ['pintu', 'banner', 'kilat', 'tema', 'hancur', 'muncul', 'peringatan', 'jarak', 'bantuan', 'hitung', 'cincin', 'cincinLewat', 'mentok']) {
+    for (const n of ['pintu', 'banner', 'kilat', 'tema', 'hancur', 'muncul', 'peringatan', 'jarak', 'bantuan', 'hitung', 'mentok']) {
       this.cb[n] = () => {};
     }
 
@@ -92,6 +89,7 @@ export class Game {
   get durasiPeringatan() { return this.cfg.durasiPeringatan; }
 
   setTema(nama) {
+    this.aturBentukRute(nama);
     this.lintasan.setTema(nama, this.s);
     this.cb.tema(nama);
   }
@@ -99,6 +97,23 @@ export class Game {
   temaBerikutnya() {
     const i = DAFTAR_TEMA.indexOf(this.tema);
     return DAFTAR_TEMA[(i + 1) % DAFTAR_TEMA.length];
+  }
+
+  /** Rute Langit lurus tanpa belokan; rute di depan pesawat dibentuk ulang bila perlu. */
+  aturBentukRute(nama) {
+    const lurus = nama === 'langit';
+    if (this.mode === 'demo' && this.rute.modeLurus !== lurus) {
+      // Latar demo: rute dibuat ulang sepenuhnya agar langsung sesuai tema
+      this.rute.reset(this.opsi.kesulitan);
+      this.rute.modeLurus = lurus;
+      this.s = 0;
+      for (const p of this.portalLama) p.hapus();
+      this.portalLama = [];
+      this.lintasan.resetRute();
+      this.snapKamera();
+      return;
+    }
+    if (this.rute.aturLurus(lurus, this.s)) this.lintasan.resetRute();
   }
 
   async muatModel(url, skala, rotasiY) {
@@ -120,7 +135,7 @@ export class Game {
     this.kBlok = 0;
     this.sCheckpoint = 5;
     this.belokDiperingatkan.clear();
-    this.stat = { tabrakan: 0, cincin: 0, cincinTotal: 0, rantaiCincin: 0, rantaiTerbaik: 0 };
+    this.stat = { tabrakan: 0 };
     this.setTema(this.tema || 'kota');
     this.siapkanBlok(this.tema);
     this.pesawat.root.visible = true;
@@ -135,24 +150,17 @@ export class Game {
     this.hitungTerakhir = null;
   }
 
-  /** Membuat gerbang, rintangan, cincin & tantangan pintu untuk blok (soal) berikutnya. */
+  /** Membuat gerbang & rintangan untuk blok (soal) berikutnya. */
   siapkanBlok(namaTema) {
+    this.aturBentukRute(namaTema);
     const blok = this.rute.ambilBlok(this.kBlok);
     this.tabrakanBlok = 0;
     this.bantuan = false;
     this.blokAktif = blok;
     this.portal = new Portal(this.scene, this.rute.posisi(blok.sGerbang, 0, 0, new THREE.Vector3()), this.rute.arah(blok.sGerbang));
     this.portal.s = blok.sGerbang;
-    // Cincin ditempatkan dulu, lalu rintangan menghindari zona cincin
-    this.cincin = buatCincinBlok(this.scene, this.rute, blok, [], this.cfg.cincin);
-    const zonaCincin = this.cincin.map((c) => [c.s - 35, c.s + 35]);
-    this.rintangan = buatRintanganBlok(this.scene, this.rute, blok, namaTema, this.opsi.kesulitan, Math.random, zonaCincin);
-    this.stat.cincinTotal += this.cincin.length;
-    // Tantangan fokus (efek Stroop): masuki pintu sesuai KATA warna, bukan warna tintanya
-    const kata = Math.floor(Math.random() * 4);
-    let tinta = kata;
-    if (Math.random() < this.cfg.stroop) tinta = (kata + 1 + Math.floor(Math.random() * 3)) % 4;
-    this.tantangan = { kata, tinta };
+    // Setiap rute tetap punya tantangan: rintangan sesuai tema (Langit: pesawat yang lewat)
+    this.rintangan = buatRintanganBlok(this.scene, this.rute, blok, namaTema, this.opsi.kesulitan);
   }
 
   /** Dipanggil setelah soal dijawab. adaLagi = masih ada soal berikutnya. */
@@ -183,7 +191,6 @@ export class Game {
     this.mode = 'demo';
     if (this.portal) this.portalLama.push(this.portal);
     this.portal = null;
-    this.tantangan = null;
     this.hapusRintangan();
     this.pesawat.root.visible = true;
     this.kebal = 0;
@@ -194,8 +201,6 @@ export class Game {
   hapusRintangan() {
     for (const r of this.rintangan) r.hapus(this.scene);
     this.rintangan = [];
-    for (const c of this.cincin) c.hapus();
-    this.cincin = [];
   }
 
   bersihkan() {
@@ -209,7 +214,7 @@ export class Game {
   setBanner(v) {
     if (v !== this.bannerTampil) {
       this.bannerTampil = v;
-      this.cb.banner(v, this.tantangan);
+      this.cb.banner(v);
     }
   }
 
@@ -225,7 +230,6 @@ export class Game {
     this.goyang = 1.1;
     this.setBanner(false);
     this.stat.tabrakan++;
-    this.stat.rantaiCincin = 0;
     this.tabrakanBlok++;
     let bantuanBaru = false;
     if (this.tabrakanBlok >= BATAS_BANTUAN && !this.bantuan) {
@@ -358,23 +362,6 @@ export class Game {
     }
     if (this.mode === 'main') this.cekPeringatanBelok(kec);
 
-    // --- Cincin bintang
-    for (const c of this.cincin) {
-      c.update(dt, this.waktu);
-      if (this.mode !== 'main' || c.diambil || !(sLama < c.s && this.s >= c.s)) continue;
-      if (c.kena(this.x, this.y)) {
-        c.ambil();
-        this.stat.cincin++;
-        this.stat.rantaiCincin++;
-        this.stat.rantaiTerbaik = Math.max(this.stat.rantaiTerbaik, this.stat.rantaiCincin);
-        this.efek.ledakan(c.mesh.position.clone(), { warna: [0xffd23f, 0xfff7cc], jumlah: 26, kecepatan: 7, umur: 0.6, ukuran: 0.35 });
-        this.cb.cincin(this.stat.rantaiCincin);
-      } else {
-        this.stat.rantaiCincin = 0;
-        this.cb.cincinLewat();
-      }
-    }
-
     // --- Gerbang
     if (this.portal) {
       const jarak = this.portal.s - this.s;
@@ -395,7 +382,7 @@ export class Game {
           this.setBanner(false);
           this.rute.posisi(this.s, PINTU[i].x, PINTU[i].y, V);
           this.efek.ledakan(V.clone(), { warna: [PINTU[i].warna, 0xffffff], jumlah: 70, kecepatan: 10 });
-          this.cb.pintu(i, this.tantangan);
+          this.cb.pintu(i); // pintu warna apa saja boleh, asal pas & tidak menabrak bingkai
         } else {
           this.hancur('Pesawat tidak pas masuk pintu gerbang!');
         }

@@ -9,12 +9,11 @@ import { acakBerseed } from '../util.js';
 // =====================================================================
 
 // durasiPeringatan: lama (detik) peringatan belokan/bahaya tampil di layar
-// stroop: peluang kata warna ditulis dengan tinta warna LAIN pada tantangan pintu (melatih fokus)
-// cincin: jumlah rangkaian cincin bintang per soal
+// lurusLangit: panjang rute Langit (lurus tanpa belokan) · pesawatLangit: jumlah pesawat yang lewat
 export const KESULITAN = {
-  mudah: { belokan: [1, 1], jariJari: [120, 150], sudut: [45, 70], rintangan: 3, lurusAkhir: 400, durasiPeringatan: 4, stroop: 0.3, cincin: 1 },
-  sedang: { belokan: [1, 2], jariJari: [90, 115], sudut: [60, 90], rintangan: 5, lurusAkhir: 460, durasiPeringatan: 3, stroop: 0.65, cincin: 2 },
-  sulit: { belokan: [2, 2], jariJari: [68, 90], sudut: [75, 105], rintangan: 7, lurusAkhir: 520, durasiPeringatan: 2, stroop: 1, cincin: 2 }
+  mudah: { belokan: [1, 1], jariJari: [120, 150], sudut: [45, 70], rintangan: 3, lurusAkhir: 400, durasiPeringatan: 4, lurusLangit: 820, pesawatLangit: 7 },
+  sedang: { belokan: [1, 2], jariJari: [90, 115], sudut: [60, 90], rintangan: 5, lurusAkhir: 460, durasiPeringatan: 3, lurusLangit: 900, pesawatLangit: 10 },
+  sulit: { belokan: [2, 2], jariJari: [68, 90], sudut: [75, 105], rintangan: 7, lurusAkhir: 520, durasiPeringatan: 2, lurusLangit: 980, pesawatLangit: 13 }
 };
 
 const JARAK_GERBANG_DARI_UJUNG = 90; // gerbang berada 90 satuan sebelum ujung blok
@@ -32,6 +31,24 @@ export class Rute {
     this.K = [0];
     this.blok = [];
     this.belokan = [];
+    this.modeLurus = false;
+  }
+
+  /**
+   * Mengatur apakah blok-blok BERIKUTNYA lurus tanpa belokan (rute Langit).
+   * Blok yang belum dicapai pesawat (dimulai setelah sSekarang) dibuang lalu dibuat ulang.
+   * @returns true bila bentuk rute di depan berubah
+   */
+  aturLurus(lurus, sSekarang) {
+    if (this.modeLurus === lurus) return false;
+    this.modeLurus = lurus;
+    const i = this.blok.findIndex((b) => b.sAwal > sSekarang);
+    if (i < 0) return false;
+    const potong = this.blok[i].sAwal;
+    this.blok.length = i;
+    for (const a of [this.X, this.Z, this.T, this.K]) a.length = potong + 1;
+    this.belokan = this.belokan.filter((b) => b.sMulai < potong);
+    return true;
   }
 
   get panjang() { return this.X.length - 1; }
@@ -64,6 +81,13 @@ export class Rute {
     const antara = (a) => a[0] + r() * (a[1] - a[0]);
     const sAwal = this.panjang;
     this.lurus(k === 0 ? 260 : 160);
+    if (this.modeLurus) {
+      // Rute Langit: lurus saja, tantangannya pesawat-pesawat yang lewat
+      this.lurus(c.lurusLangit);
+      const blok = { k, sAwal, sAkhir: this.panjang, sGerbang: this.panjang - JARAK_GERBANG_DARI_UJUNG, belokan: [], lurus: true };
+      this.blok.push(blok);
+      return blok;
+    }
     const jml = c.belokan[0] + Math.floor(r() * (c.belokan[1] - c.belokan[0] + 1));
     const belokan = [];
     for (let j = 0; j < jml; j++) {

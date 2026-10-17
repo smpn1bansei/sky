@@ -15,7 +15,6 @@ export class ModalSoal {
     this.timerBar = this.el.querySelector('.timer-isi');
     this.status = this.el.querySelector('.status-jawab');
     this.kartu = this.el.querySelector('.kartu-soal');
-    this.infoFokus = this.el.querySelector('.info-fokus');
     this.selesaikan = null;
 
     window.addEventListener('keydown', (e) => {
@@ -32,13 +31,8 @@ export class ModalSoal {
   /**
    * @returns Promise<{ pilihan: 'a'|'b'|'c'|'d'|'-', durasi, sisa, habis }>
    */
-  tampilkan({ nomor, total, teks, gambar, opsi, waktu, sisa, warna, catatan }) {
+  tampilkan({ nomor, total, teks, gambar, opsi, waktu, sisa, warna }) {
     this.opsi = opsi;
-    this.infoFokus.hidden = !catatan;
-    if (catatan) {
-      this.infoFokus.textContent = catatan.teks;
-      this.infoFokus.className = `info-fokus ${catatan.baik ? 'baik' : 'kurang'}`;
-    }
     this.nomor.textContent = `Soal ${nomor} dari ${total}`;
     this.teks.textContent = teks;
     if (gambar) {

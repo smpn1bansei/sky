@@ -10,6 +10,8 @@ import { KESULITAN } from './rute.js';
 
 const lambert = (color, ekstra = {}) => new THREE.MeshLambertMaterial({ color, flatShading: true, ...ekstra });
 const antara = (rng, a, b) => a + rng() * (b - a);
+const JARAK_LINTAS = 34; // pesawat melintas mulai sejauh ini dari titik potong jalurnya
+const WARNA_PESAWAT = [[0x1d4ed8, 0xdbeafe], [0x16a34a, 0xf0fdf4], [0xf97316, 0xfff7ed], [0x7c3aed, 0xf5f3ff], [0xdb2777, 0xfdf2f8], [0x0891b2, 0xecfeff]];
 
 let teksturBahaya = null;
 function teksturGaris() {
@@ -41,9 +43,10 @@ class Rintangan {
     this.diperingatkan = false;
     this.t = 0;
     if (this.gerak === 'lawan') this.s = this.awal.s + this.kecepatan * 7; // bertemu pemain kira-kira di awal.s
+    else if (this.gerak === 'lintas') { this.s = this.awal.s; this.x = this.awal.x - this.arahLintas * JARAK_LINTAS; }
     else if (this.gerak === 'jatuh') { this.s = this.awal.s + 45; this.y = 55; }
     else this.s = this.awal.s;
-    this.x = this.awal.x;
+    if (this.gerak !== 'lintas') this.x = this.awal.x;
     if (this.gerak !== 'jatuh') this.y = this.awal.y;
     this.sLama = this.s;
     this.mesh.visible = true;
@@ -59,6 +62,22 @@ class Rintangan {
         this.s -= this.kecepatan * dt;
         if (this.goyang) this.x = this.awal.x + Math.sin(this.t * 1.6) * this.goyang;
       }
+    } else if (this.gerak === 'lintas') {
+      // Melintas menyamping: mulai bergerak agar memotong jalur kira-kira saat pemain tiba
+      if (!this.aktif && sPemain >= this.awal.s - this.jarakPicu) this.aktif = true;
+      if (this.aktif) {
+        this.t += dt;
+        this.x += this.arahLintas * this.kecepatan * dt;
+        if (Math.abs(this.x - this.awal.x) > JARAK_LINTAS + 8) this.mesh.visible = false;
+      }
+    } else if (this.gerak === 'searah') {
+      // Terbang searah tetapi lebih lambat → harus disalip
+      if (!this.aktif && sPemain >= this.awal.s - 160) this.aktif = true;
+      if (this.aktif) {
+        this.t += dt;
+        this.s += this.kecepatan * dt;
+        if (this.goyang) this.y = this.awal.y + Math.sin(this.t * 1.3) * this.goyang;
+      }
     } else if (this.gerak === 'jatuh') {
       if (!this.aktif && sPemain >= this.awal.s - 210) this.aktif = true;
       if (this.aktif && this.t < 1.6) {
@@ -70,7 +89,7 @@ class Rintangan {
       }
     }
     rute.posisi(this.s, this.x, this.yMesh ?? this.y, this.mesh.position);
-    this.mesh.rotation.y = rute.arah(this.s) + (this.hadapBalik ? Math.PI : 0);
+    this.mesh.rotation.y = rute.arah(this.s) + (this.hadapBalik ? Math.PI : 0) + (this.rotY || 0);
     if (this.putar) { this.inti.rotation.x += this.putar * dt; this.inti.rotation.z += this.putar * 0.7 * dt; }
     if (this.lampu) this.lampu.visible = Math.floor((this.t + this.awal.s) * 4) % 2 === 0;
   }
@@ -85,6 +104,7 @@ class Rintangan {
   peringatan(sPemain) {
     if (this.gerak === 'diam' || !this.aktif) return null;
     const d = this.s - sPemain;
+    if (this.gerak === 'lintas') return d > 0 ? this.nama : null;
     return d > 0 && d < 230 ? this.nama : null;
   }
 
@@ -130,19 +150,30 @@ function meshPalang(tema, yBawah, yAtas) {
   const tekstur = teksturGaris().clone();
   tekstur.needsUpdate = true;
   tekstur.repeat.set(7, 1);
-  const warnaTint = tema === 'angkasa' ? 0x9be7ff : tema === 'gurun' ? 0xffe2b0 : 0xffffff;
+  const warnaTint = tema === 'langit' ? 0xe0f2fe : tema === 'gurun' ? 0xffe2b0 : 0xffffff;
   const matDepan = new THREE.MeshLambertMaterial({ map: tekstur, color: warnaTint });
   const balok = new THREE.Mesh(new THREE.BoxGeometry(28, tinggi, 2.4), matDepan);
   balok.position.y = yBawah + tinggi / 2;
   g.add(balok);
   // Tiang penyangga di kedua sisi (di luar jalur)
-  const matTiang = lambert(tema === 'angkasa' ? 0x64748b : 0x6b7280);
+  const matTiang = lambert(0x6b7280);
   for (const sx of [-1, 1]) {
     const t = new THREE.Mesh(new THREE.BoxGeometry(1.4, 16, 1.6), matTiang);
     t.position.set(sx * 14.6, 8, 0);
     g.add(t);
   }
   return g;
+}
+
+function meshPesawatLain([warna, badan], skala = 0.85) {
+  const m = new THREE.Group();
+  const p = buatPesawatBawaan(warna, badan);
+  p.scale.setScalar(skala);
+  m.add(p);
+  const lampu = new THREE.Mesh(new THREE.SphereGeometry(0.35, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff2222 }));
+  lampu.position.set(0, 0.9, 0);
+  m.add(lampu);
+  return { m, lampu };
 }
 
 function meshMeteor(r, ekorPanjang = 9) {
@@ -184,16 +215,29 @@ const PEMBUAT = {
     return new Rintangan({ jenis: 'palang', nama: 'Palang', s, x: 0, y: 10.8, hx: 14, hy: 5.2, hs: 1.2, yMesh: 0, mesh: meshPalang(tema, 5.6, 16) });
   },
   pesawat(tema, rng, s) {
-    const m = new THREE.Group();
-    const p = buatPesawatBawaan(0x1d4ed8, 0xdbeafe);
-    p.scale.setScalar(0.85);
-    m.add(p);
-    const lampu = new THREE.Mesh(new THREE.SphereGeometry(0.35, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff2222 }));
-    lampu.position.set(0, 0.9, 0);
-    m.add(lampu);
+    const { m, lampu } = meshPesawatLain(tema === 'langit' ? WARNA_PESAWAT[Math.floor(rng() * WARNA_PESAWAT.length)] : WARNA_PESAWAT[0]);
     return new Rintangan({
       jenis: 'pesawat', nama: '⚠ Pesawat dari depan!', s, x: antara(rng, -7, 7), y: antara(rng, 3, 10),
       hx: 2.0, hy: 0.6, hs: 1.6, gerak: 'lawan', kecepatan: 24, hadapBalik: true, mesh: m, lampu
+    });
+  },
+  pesawatLintas(tema, rng, s) {
+    const { m, lampu } = meshPesawatLain(WARNA_PESAWAT[Math.floor(rng() * WARNA_PESAWAT.length)]);
+    const arahLintas = rng() < 0.5 ? 1 : -1; // +1: dari kiri ke kanan
+    const kecepatan = antara(rng, 13, 18);
+    // Saat pemain (±30 satuan/detik) tiba, pesawat sudah sampai di sekitar titik potong
+    const jarakPicu = (JARAK_LINTAS / kecepatan) * 30 * antara(rng, 0.8, 1.15);
+    return new Rintangan({
+      jenis: 'pesawat', nama: arahLintas > 0 ? '⚠ Pesawat melintas dari KIRI!' : '⚠ Pesawat melintas dari KANAN!',
+      s, x: antara(rng, -5, 5), y: antara(rng, 3, 10), hx: 1.6, hy: 0.6, hs: 2.0,
+      gerak: 'lintas', arahLintas, kecepatan, jarakPicu, rotY: -arahLintas * Math.PI / 2, mesh: m, lampu
+    });
+  },
+  pesawatSearah(tema, rng, s) {
+    const { m, lampu } = meshPesawatLain(WARNA_PESAWAT[Math.floor(rng() * WARNA_PESAWAT.length)], 1.15);
+    return new Rintangan({
+      jenis: 'pesawat', nama: '⚠ Pesawat lambat di depan — salip!', s, x: antara(rng, -7, 7), y: antara(rng, 3, 10),
+      hx: 2.4, hy: 0.7, hs: 1.9, gerak: 'searah', kecepatan: 9, goyang: 1.2, mesh: m, lampu
     });
   },
   ufo(tema, rng, s) {
@@ -237,7 +281,7 @@ const PEMBUAT = {
 
 const JENIS_PER_TEMA = {
   kota: ['tiang', 'tiang', 'pesawat', 'pesawat', 'palangRendah', 'palangTinggi'],
-  angkasa: ['batu', 'batu', 'meteor', 'meteor', 'ufo', 'palangTinggi'],
+  langit: ['pesawat', 'pesawat', 'pesawatLintas', 'pesawatLintas', 'pesawatLintas', 'pesawatSearah'],
   gurun: ['tiang', 'pesawat', 'meteorJatuh', 'meteorJatuh', 'palangRendah', 'palangTinggi']
 };
 
@@ -246,7 +290,10 @@ const JENIS_PER_TEMA = {
  * Rintangan hanya diletakkan di bagian lurus, jauh dari belokan dan gerbang.
  */
 export function buatRintanganBlok(scene, rute, blok, tema, kesulitan, rng = Math.random, zonaLarangan = []) {
-  const jumlah = (KESULITAN[kesulitan] || KESULITAN.sedang).rintangan;
+  const cfg = KESULITAN[kesulitan] || KESULITAN.sedang;
+  const langit = tema === 'langit';
+  const jumlah = langit ? cfg.pesawatLangit : cfg.rintangan;
+  const jarakMin = langit ? 58 : 65;
   const kandidat = [];
   for (let s = blok.sAwal + (blok.k === 0 ? 160 : 80); s < blok.sGerbang - 110; s += 5) {
     if (rute.diLurus(s, 45) && !zonaLarangan.some(([a, b]) => s > a && s < b)) kandidat.push(s);
@@ -258,7 +305,7 @@ export function buatRintanganBlok(scene, rute, blok, tema, kesulitan, rng = Math
   const terpilih = [];
   for (const s of kandidat) {
     if (terpilih.length >= jumlah) break;
-    if (terpilih.every((t) => Math.abs(t - s) >= 65)) terpilih.push(s);
+    if (terpilih.every((t) => Math.abs(t - s) >= jarakMin)) terpilih.push(s);
   }
   const daftarJenis = JENIS_PER_TEMA[tema] || JENIS_PER_TEMA.kota;
   return terpilih.sort((a, b) => a - b).map((s) => {

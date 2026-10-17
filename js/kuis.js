@@ -7,8 +7,6 @@ import { pengaturanGame } from '../config.js';
 import { acakBerseed, hashString, kocok, bacaLokal, simpanLokal, hapusLokal, HURUF } from './util.js';
 
 const MIN_SISA_SETELAH_REFRESH = 5; // detik
-export const POIN_CINCIN = 10;      // × panjang rantai cincin (maks ×5)
-export const POIN_FOKUS = 50;       // bonus tantangan pintu (Stroop)
 
 class Sesi {
   constructor() {
@@ -20,7 +18,7 @@ class Sesi {
     this.poinTerakhir = 0;
     this.waktuPerSoal = 30;
     this.combo = 0;         // jawaban benar berturut-turut
-    this.stat = { tabrakan: 0, cincin: 0, fokus: 0, comboTerbaik: 0 };
+    this.stat = { tabrakan: 0, comboTerbaik: 0 };
   }
 
   get total() { return this.daftar.length; }
@@ -66,22 +64,6 @@ class Sesi {
     }
     this.skor += this.poinTerakhir;
     this.indeks++;
-  }
-
-  /** Cincin bintang: poin = 10 × panjang rantai (maks ×5). */
-  catatCincin(rantai) {
-    const poin = POIN_CINCIN * Math.min(5, rantai);
-    this.stat.cincin++;
-    this.skor += poin;
-    return poin;
-  }
-
-  /** Tantangan fokus di pintu: benar → bonus. */
-  catatFokus(benar) {
-    if (!benar) return 0;
-    this.stat.fokus++;
-    this.skor += POIN_FOKUS;
-    return POIN_FOKUS;
   }
 
   catatTabrakan() { this.stat.tabrakan++; }
@@ -190,7 +172,7 @@ export class SesiOnline extends Sesi {
       if (jawaban[id].benar) sesi.benar++; else sesi.salah++;
     }
     sesi.skor = siswa.skor || 0;
-    sesi.stat = { ...sesi.stat, tabrakan: siswa.tabrakan || 0, cincin: siswa.cincin || 0, fokus: siswa.fokus || 0 };
+    sesi.stat = { ...sesi.stat, tabrakan: siswa.tabrakan || 0 };
     sesi.sudahSelesai = sesi.selesaiSemua;
     return sesi;
   }
@@ -209,7 +191,7 @@ export class SesiOnline extends Sesi {
   dataSkor() {
     return {
       soalKe: this.indeks, benar: this.benar, salah: this.salah, skor: this.skor, nilai: this.nilai,
-      tabrakan: this.stat.tabrakan, cincin: this.stat.cincin, fokus: this.stat.fokus,
+      tabrakan: this.stat.tabrakan,
       status: this.selesaiSemua ? 'selesai' : 'bermain'
     };
   }

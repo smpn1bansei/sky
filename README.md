@@ -1,6 +1,6 @@
 # ✈️ Sky Cruiser Quiz — Game Edukasi 3D untuk Ujian Sumatif
 
-Siswa menerbangkan pesawat menyusuri rute 3D yang berkelok (Kota → Angkasa → Gurun), menghindari rintangan dan melewati belokan tajam. Di ujung setiap rute muncul **gerbang 4 pintu berwarna** yang harus dimasuki dengan tepat. Saat pesawat masuk pintu, muncul **soal pilihan ganda A–D** dengan timer. Jawaban benar menambah poin dan mengganti tema dunia. Di akhir, siswa melihat **nilai 0–100**, dan guru memantau semuanya secara **live** lalu mengekspor nilai ke **Excel**.
+Siswa menerbangkan pesawat menyusuri rute 3D yang berkelok (Kota → Langit → Gurun), menghindari rintangan dan melewati belokan tajam. Di ujung setiap rute muncul **gerbang 4 pintu berwarna** — pintu warna apa saja boleh dimasuki, asal pas dan tidak menabrak bingkai. Saat pesawat masuk pintu, muncul **soal pilihan ganda A–D** dengan timer. Jawaban benar menambah poin dan mengganti tema dunia. Di akhir, siswa melihat **nilai 0–100**, dan guru memantau semuanya secara **live** lalu mengekspor nilai ke **Excel**.
 
 - `index.html` → halaman **siswa** (game)
 - `admin.html` → **panel guru** (bank soal, room/PIN, pantau live, ekspor)
@@ -31,19 +31,16 @@ Tanpa Firebase pun game tetap bisa dimainkan dalam **mode offline (latihan)** me
 - Kendali keyboard (panah / WASD) dan **joystick virtual** di layar sentuh.
 - Soal pilihan ganda dengan timer; jawab dengan klik atau tombol 1–4.
 - Rute panjang (±0,9–1,4 km per soal, 30–50 detik terbang) dengan **belokan tajam**: di tikungan pesawat terdorong ke sisi luar, siswa harus menahan arah belokan. Hanya sisi luar yang dipasangi rambu chevron kuning-hitam — menabraknya = hancur; sisi lain (dan semua tepi jalur di bagian lurus) hanya **mentok/tertahan** dengan efek tepi layar menyala.
-- **Peringatan singkat** (belokan, pesawat lawan arah, UFO, meteor) tampil sekali selama **4 / 3 / 2 detik** sesuai kesulitan Mudah / Sedang / Sulit — melatih konsentrasi.
+- **Peringatan singkat** (belokan, pesawat lawan arah/melintas, meteor) tampil sekali selama **4 / 3 / 2 detik** sesuai kesulitan Mudah / Sedang / Sulit.
 - **Hitung mundur 3-2-1** sebelum terbang dan setelah muncul ulang di checkpoint.
-- **Rintangan** sesuai tema: tiang, palang tinggi/rendah, pesawat lawan arah (Kota/Gurun), meteor terbang, UFO & asteroid (Angkasa), meteor jatuh & obelisk (Gurun).
-- **Gerbang presisi**: pintu **bersinar** bila posisi pesawat sudah pas; masuk tidak pas = menabrak bingkai.
+- **Rintangan** sesuai tema, ada di setiap rute: tiang, palang tinggi/rendah, pesawat lawan arah (Kota/Gurun), meteor jatuh & obelisk (Gurun).
+- **Rute Langit berawan**: terang, di atas lautan awan, jalannya **lurus tanpa belokan** tetapi **banyak pesawat lewat** — dari depan, melintas dari kiri/kanan, dan pesawat lambat yang harus disalip (7 / 10 / 13 pesawat per soal untuk Mudah / Sedang / Sulit).
+- **Gerbang presisi**: pintu merah, biru, kuning, atau hijau — **bebas pilih**. Pintu **bersinar** bila posisi pesawat sudah pas; masuk tidak pas = menabrak bingkai.
 - Menabrak rintangan / gagal berbelok / tidak pas di gerbang → **pesawat hancur** dan muncul lagi di **checkpoint** (gerbang terakhir yang dilewati), dengan kebal 2 detik.
 - **Mode bantuan otomatis**: setelah 3x hancur di bagian yang sama, rintangan bagian itu dihilangkan dan pintu lebih longgar — agar ujian tetap menilai pengetahuan, bukan hanya keterampilan bermain.
 - Benar → poin + bonus kecepatan, efek konfeti, dunia berganti tema. Salah / waktu habis → tanpa poin, lanjut ke rute berikutnya.
 - Tombol **layar penuh** & suara di kanan atas.
-- **Fitur konsentrasi & kognitif**:
-  - ★ **Cincin bintang** berantai — makin banyak berturut-turut, makin besar bonus (latihan fokus & koordinasi mata-tangan).
-  - 🎯 **Tantangan pintu (efek Stroop)**: di layar muncul nama warna yang ditulis dengan tinta warna lain (mis. kata **BIRU** berwarna merah). Masuk pintu sesuai **KATA** → bonus. Melatih kontrol diri/inhibisi & perhatian selektif. Peluang kata-tinta berbeda: 30% (Mudah), 65% (Sedang), 100% (Sulit). Pintu mana pun tetap memunculkan soal; benar/salah soal tidak terpengaruh.
-  - 🔥 **Combo**: jawaban benar berturut-turut melipatgandakan poin (hingga ×2).
-  - Layar hasil menampilkan statistik konsentrasi: cincin, tantangan fokus, combo terbaik, jumlah tabrakan.
+- 🔥 **Combo**: jawaban benar berturut-turut melipatgandakan poin (hingga ×2). Layar hasil juga menampilkan combo terbaik dan jumlah tabrakan.
 - **Refresh aman**: halaman ter-refresh → tekan MASUK lagi → lanjut dari soal terakhir (timer tidak ter-reset).
 - **Nama lengkap adalah identitas peserta** di satu room: nama yang sama (huruf besar/kecil & spasi diabaikan) tidak bisa ikut dua kali. **Satu perangkat boleh dipakai bergantian** oleh beberapa siswa dengan nama berbeda (cocok untuk sekolah yang kekurangan perangkat).
 
@@ -54,7 +51,7 @@ Tanpa Firebase pun game tetap bisa dimainkan dalam **mode offline (latihan)** me
 - **Buat room**: pilih paket, jumlah soal (mis. 10 dari 12), waktu per soal, **tingkat kesulitan rute** (Mudah/Sedang/Sulit), acak soal/opsi, mode PIN/Langsung → PIN 6 digit acak.
 - **Pantau live**: tabel ala leaderboard (nama, kelas, soal ke-, benar, salah, skor, nilai, status online/selesai).
 - Tombol **Mulai**, **Akhiri**, **Mulai lagi** (room yang sudah diakhiri bisa dibuka lagi, mis. untuk kelas lain di jam berbeda — rekap tetap di satu room), **Ekspor Excel** (3 sheet: Rekap Nilai, Detail Jawaban per soal, Daftar Soal) dan **Ekspor CSV**.
-- Kolom **Konsentrasi** di tabel live: 💥 tabrakan · ★ cincin · 🎯 tantangan fokus benar.
+- Kolom **Tabrakan** di tabel live: berapa kali pesawat siswa hancur.
 - Tombol **Reset** per siswa (bila siswa ganti perangkat / salah ketik nama).
 - Semua tindakan penting (Akhiri, Reset, Hapus, Keluar) memakai **jendela konfirmasi** yang jelas, dan tersedia tombol **layar penuh** di kanan atas.
 
@@ -204,7 +201,7 @@ Firebase Console → **Authentication → Settings → Authorized domains** → 
 - Status **Offline** berarti perangkat siswa terputus/tab ditutup. Jika ia membuka lagi di perangkat yang sama dan menekan MASUK, ia melanjutkan dari soal terakhir.
 
 ### 4.4 Ekspor nilai
-- **⬇ Excel** → file `.xlsx` berisi 3 sheet: *Rekap Nilai* (termasuk Tabrakan, Cincin Bintang, Tantangan Fokus, Waktu Masuk, Terakhir Aktif), *Detail Jawaban* (jawaban tiap siswa per soal + baris kunci), *Daftar Soal*.
+- **⬇ Excel** → file `.xlsx` berisi 3 sheet: *Rekap Nilai* (termasuk Tabrakan, Waktu Masuk, Terakhir Aktif), *Detail Jawaban* (jawaban tiap siswa per soal + baris kunci), *Daftar Soal*.
 - **⬇ CSV** → hanya rekap nilai.
 - Room lama bisa dibuka lagi kapan saja dari **Daftar Room** → **Pantau**. Hapus room (🗑) bila datanya sudah tidak diperlukan.
 
@@ -223,9 +220,9 @@ Firebase Console → **Authentication → Settings → Authorized domains** → 
 3. Kendalikan pesawat:
    - Laptop/Chromebook: **← ↑ ↓ →** atau **W A S D**
    - HP/tablet: **joystick** di kiri bawah layar
-4. Ikuti rute dan **hindari rintangan** (tiang, palang, pesawat lain, meteor, UFO, asteroid). Untuk palang: naik bila palangnya rendah, turun bila palangnya tinggi.
+4. Ikuti rute dan **hindari rintangan** (tiang, palang, pesawat lain, meteor). Di rute **Langit** tidak ada belokan, tetapi banyak pesawat lewat — perhatikan peringatan arah datangnya. Untuk palang: naik bila palangnya rendah, turun bila palangnya tinggi.
 5. Saat muncul **BELOKAN TAJAM**, tahan tombol/joystick **ke arah belokan** sampai tikungan selesai — kalau tidak, pesawat terlempar keluar jalur.
-6. Saat muncul **PILIH LINTASAN!**, arahkan pesawat ke salah satu pintu sampai pintunya **bersinar**, lalu pertahankan posisi saat melewatinya.
+6. Saat muncul **GERBANG SOAL**, arahkan pesawat ke pintu warna apa saja sampai pintunya **bersinar**, lalu pertahankan posisi saat melewatinya.
 7. Pesawat hancur? Tenang — kamu mengulang dari **gerbang terakhir** yang sudah dilewati. Setelah 3x gagal di bagian yang sama, rintangan bagian itu dihilangkan.
 8. Jawab soal dengan klik/ketuk jawaban (atau tombol **1–4** di keyboard) sebelum waktu habis.
 9. Setelah semua soal terjawab, nilai akhir tampil dan otomatis terkirim ke guru.
@@ -307,7 +304,7 @@ rooms/{PIN}/info: { judul, paketId, jumlahSoal, waktuPerSoal, acakSoal, acakOpsi
                     mode: "pin"|"langsung", status: "menunggu"|"berjalan"|"selesai", dibuatOleh, dibuatPada }
 rooms/{PIN}/namaIndex/{namaSiswa}: uidPerangkat                         ← nama dikunci ke perangkat yang memakainya
 rooms/{PIN}/siswa/{namaSiswa}: { nama, kelas, pemilik, soalKe, benar, salah, skor, nilai,
-                                 tabrakan, cincin, fokus,
+                                 tabrakan,
                                  status: "menunggu"|"bermain"|"selesai", online, bergabung, terakhirAktif, urutan }
 rooms/{PIN}/jawaban/{namaSiswa}/{soalId}: { pilihan, benar, waktu, durasi }
 ```

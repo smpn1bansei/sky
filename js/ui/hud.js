@@ -1,9 +1,6 @@
 import { NAMA_TEMA } from '../game/tema.js';
-import { PINTU } from '../game/portal.js';
 
-const NAMA_WARNA = ['MERAH', 'BIRU', 'KUNING', 'HIJAU'];
-
-/** HUD permainan: skor, progres, peringatan, banner tantangan, hitung mundur, efek mentok. */
+/** HUD permainan: skor, progres, peringatan, banner gerbang, hitung mundur, efek mentok. */
 export class HUD {
   constructor() {
     const $ = (id) => document.getElementById(id);
@@ -12,12 +9,10 @@ export class HUD {
     this.skor = $('hud-skor');
     this.benar = $('hud-benar');
     this.tema = $('hud-tema');
-    this.cincin = $('hud-cincin');
     this.combo = $('hud-combo');
     this.progres = $('hud-progres-isi');
     this.banner = $('banner');
     this.popup = $('popup-poin');
-    this.popupKecil = $('popup-kecil');
     this.belok = $('peringatan-belok');
     this.bahaya = $('peringatan-bahaya');
     this.hancur = $('banner-hancur');
@@ -41,7 +36,6 @@ export class HUD {
     const nomor = Math.min(sesi.indeks + 1, sesi.total);
     this.soal.textContent = `${nomor}/${sesi.total}`;
     this.benar.textContent = sesi.benar;
-    this.cincin.textContent = sesi.stat?.cincin ?? 0;
     this.setCombo(sesi.combo || 0);
     this.animasiSkor(sesi.skor);
   }
@@ -60,13 +54,6 @@ export class HUD {
 
   setTema(nama) { this.tema.textContent = NAMA_TEMA[nama] || nama; }
 
-  setCincin(n) {
-    this.cincin.textContent = n;
-    this.cincin.parentElement.classList.remove('denyut');
-    void this.cincin.offsetWidth;
-    this.cincin.parentElement.classList.add('denyut');
-  }
-
   setCombo(n) {
     this.combo.textContent = n >= 2 ? `COMBO ×${n}` : '';
     this.combo.classList.toggle('aktif', n >= 2);
@@ -78,16 +65,8 @@ export class HUD {
     this.progres.style.transform = `scaleX(${p})`;
   }
 
-  /**
-   * Banner tantangan pintu (efek Stroop): KATA warna ditulis dengan TINTA warna lain.
-   * Siswa harus memilih pintu sesuai KATA → melatih fokus & kontrol diri.
-   */
-  setBanner(v, tantangan) {
-    if (v && tantangan) {
-      const kata = this.banner.querySelector('.kata');
-      kata.textContent = NAMA_WARNA[tantangan.kata];
-      kata.style.color = PINTU[tantangan.tinta].css;
-    }
+  /** Banner gerbang: pintu warna apa saja boleh dimasuki, asal pas dan tidak menabrak. */
+  setBanner(v) {
     this.banner.classList.toggle('aktif', v);
   }
 
@@ -136,12 +115,5 @@ export class HUD {
     this.popup.className = benar ? 'benar' : 'salah';
     void this.popup.offsetWidth;
     this.popup.classList.add('jalan');
-  }
-
-  tampilkanPoinKecil(teks, jenis = 'cincin') {
-    this.popupKecil.textContent = teks;
-    this.popupKecil.className = jenis;
-    void this.popupKecil.offsetWidth;
-    this.popupKecil.classList.add('jalan');
   }
 }

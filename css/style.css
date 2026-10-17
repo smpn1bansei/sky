@@ -147,9 +147,6 @@ kbd {
   border: 1px solid rgba(255,255,255,0.16); border-radius: 14px; box-shadow: 0 4px 14px rgba(0,0,0,0.25);
   padding: 4px 12px; display: flex; flex-direction: column; align-items: center; min-width: 64px;
 }
-.hud-kotak.cincin b { color: #fde68a; }
-.hud-kotak.denyut { animation: denyutKotak 0.35s ease-out; }
-@keyframes denyutKotak { 40% { transform: scale(1.18); border-color: #fde68a; } }
 .hud-progres { display: flex; align-items: center; gap: 6px; width: min(46vw, 300px); font-size: 0.85rem; }
 .hud-progres .jalur { flex: 1; height: 8px; border-radius: 8px; background: rgba(255,255,255,0.15); overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); }
 #hud-progres-isi { height: 100%; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, #22c55e, #facc15, #ef4444); transition: transform 0.2s linear; }
@@ -175,7 +172,6 @@ kbd {
   .hud-kotak.skor b { font-size: 1.2rem; }
   .chip-tema { display: none; }
   .hud-kanan { padding-right: 96px; flex: 0; }
-  .hud-kiri .cincin small { display: none; }
   .hud-progres { width: 40vw; }
   #peringatan-belok { top: 27%; }
 }
@@ -254,20 +250,26 @@ dialog.modal-konfirmasi .mk-isi { padding: 24px 22px 20px; text-align: center; d
 .modal-konfirmasi[data-jenis="bahaya"] .mk-aksi .mk-ok { background: #dc2626; border-color: #dc2626; color: #fff; }
 .modal-konfirmasi .mk-aksi button:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
 
-/* Banner tantangan pintu (efek Stroop) */
+/* Banner gerbang soal: pintu warna apa saja boleh */
 #banner {
   position: fixed; left: 50%; top: 21%; z-index: 9; pointer-events: none; text-align: center;
   transform: translateX(-50%) scale(0.6); opacity: 0; transition: opacity 0.25s, transform 0.25s;
-  padding: 8px 22px 10px; border-radius: 18px; background: rgba(8, 13, 30, 0.72);
+  padding: 8px 22px 10px; border-radius: 18px; background: rgba(8, 13, 30, 0.72); width: max-content; max-width: calc(100vw - 32px);
   border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 #banner .atas { font-size: clamp(0.8rem, 3vw, 1rem); letter-spacing: 2px; color: #e2e8f0; font-weight: 600; white-space: nowrap; }
 #banner .kata {
-  font-size: clamp(2.4rem, 11vw, 4.2rem); font-weight: 700; line-height: 1.05; letter-spacing: 3px;
+  color: #fff; font-size: clamp(1.8rem, 8vw, 3rem); font-weight: 700; line-height: 1.05; letter-spacing: 3px;
   -webkit-text-stroke: 2px rgba(255,255,255,0.85); paint-order: stroke fill;
   text-shadow: 0 6px 18px rgba(0,0,0,0.5);
 }
-#banner .bawah { font-size: clamp(0.72rem, 2.6vw, 0.85rem); color: #94a3b8; white-space: nowrap; }
+#banner .warna-pintu { display: flex; justify-content: center; gap: 8px; margin: 4px 0 6px; }
+#banner .warna-pintu i { width: 22px; height: 22px; border-radius: 6px; border: 2px solid rgba(255,255,255,0.85); box-shadow: 0 0 10px currentColor; }
+#banner .warna-pintu .merah { background: #ef4444; color: #ef4444; }
+#banner .warna-pintu .biru { background: #3b82f6; color: #3b82f6; }
+#banner .warna-pintu .kuning { background: #facc15; color: #facc15; }
+#banner .warna-pintu .hijau { background: #22c55e; color: #22c55e; }
+#banner .bawah { font-size: clamp(0.72rem, 2.6vw, 0.85rem); color: #cbd5e1; }
 #banner.aktif { opacity: 1; transform: translateX(-50%) scale(1); }
 
 /* Hitung mundur 3-2-1 */
@@ -294,29 +296,9 @@ dialog.modal-konfirmasi .mk-isi { padding: 24px 22px 20px; text-align: center; d
 #mentok.aktif { animation: mentok 0.35s ease-out; }
 @keyframes mentok { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-/* Popup kecil (cincin) */
-#popup-kecil {
-  position: fixed; left: 50%; top: 56%; z-index: 9; pointer-events: none; opacity: 0;
-  transform: translateX(-50%); font-weight: 700; font-size: 1.4rem; white-space: nowrap;
-  text-shadow: 0 3px 10px rgba(0,0,0,0.6);
-}
-#popup-kecil.cincin { color: #fde68a; }
-#popup-kecil.lewat { color: #cbd5e1; font-size: 1rem; }
-#popup-kecil.jalan { animation: naikKecil 0.9s ease-out forwards; }
-@keyframes naikKecil {
-  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.7); }
-  20% { opacity: 1; transform: translate(-50%, 0) scale(1.1); }
-  100% { opacity: 0; transform: translate(-50%, -40px) scale(1); }
-}
-
-/* Catatan tantangan fokus di modal soal */
-.info-fokus { margin: -4px 0 12px; padding: 6px 12px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; }
-.info-fokus.baik { background: rgba(34,197,94,0.18); color: #86efac; }
-.info-fokus.kurang { background: rgba(148,163,184,0.15); color: #cbd5e1; }
-
-/* Statistik konsentrasi di layar hasil */
+/* Statistik tambahan di layar hasil */
+.statistik.kecil-stat { grid-template-columns: repeat(2, 1fr); margin-top: 8px; }
 .statistik.kecil-stat b { font-size: 1.15rem; }
-.rating-fokus { margin: 10px 0 0; font-weight: 600; color: #c4b5fd; }
 
 #popup-poin {
   position: fixed; left: 50%; top: 40%; z-index: 9; pointer-events: none; opacity: 0;
